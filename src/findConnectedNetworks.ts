@@ -13,7 +13,7 @@ export function findConnectedNetworks(
       }
     }
     const newNetwork = new Set<string>()
-    networks.set(`net_${netCounter++}`, newNetwork)
+    networks.set(`connectivity_net${netCounter++}`, newNetwork)
     return newNetwork
   }
 

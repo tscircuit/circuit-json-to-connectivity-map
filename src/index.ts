@@ -1,2 +1,2 @@
 export { findConnectedNetworks } from "./findConnectedNetworks"
-export { getSoupPortConnectivityMapFromCircuitJson } from "./getSourcePortConnectivityMapFromCircuitJson"
+export { getSourcePortConnectivityMapFromCircuitJson } from "./getSourcePortConnectivityMapFromCircuitJson"
