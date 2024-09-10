@@ -1,7 +1,7 @@
 import type { AnySoupElement } from "@tscircuit/soup"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 
-export const getSoupPortConnectivityMapFromCircuitJson = (
+export const getSourcePortConnectivityMapFromCircuitJson = (
   circuitJson: AnySoupElement[],
 ) => {
   const connectivityMap = new Map<string, string[]>()
@@ -10,7 +10,10 @@ export const getSoupPortConnectivityMapFromCircuitJson = (
 
   for (const element of circuitJson) {
     if (element.type === "source_trace") {
-      connections.push(element.connected_source_port_ids)
+      connections.push([
+        ...element.connected_source_port_ids,
+        ...element.connected_source_net_ids,
+      ])
     }
   }
 
