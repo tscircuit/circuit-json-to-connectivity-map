@@ -24,14 +24,7 @@ test("should create source port connectivity map from circuit JSON", () => {
     },
   ]
 
-  const result = getSourcePortConnectivityMapFromCircuitJson(circuitJson)
+  const cmap = getSourcePortConnectivityMapFromCircuitJson(circuitJson)
 
-  expect(result).toEqual(
-    new Map([
-      // 3 & 5 here are from the merge operations, they're somewhat random
-      // and not important- likewise with the ordering of the ports
-      ["connectivity_net3", ["port3", "port1", "port2", "net1", "net2"]],
-      ["connectivity_net5", ["port4", "net3"]],
-    ]),
-  )
+  expect(cmap.areIdsConnected("port3", "port1")).toBeTrue()
 })

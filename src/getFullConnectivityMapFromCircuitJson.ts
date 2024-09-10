@@ -1,18 +1,17 @@
 import type { AnySoupElement } from "@tscircuit/soup"
 import { findConnectedNetworks } from "./findConnectedNetworks"
+import { ConnectivityMap } from "./ConnectivityMap"
 
 export const getFullConnectivityMapFromCircuitJson = (
   circuitJson: AnySoupElement[],
 ) => {
-  const connectivityMap = new Map<string, string[]>()
-
   const connections: string[][] = []
 
   for (const element of circuitJson) {
     if (element.type === "source_trace") {
       connections.push([
-        ...element.connected_source_port_ids,
-        ...element.connected_source_net_ids,
+        ...(element.connected_source_port_ids ?? []),
+        ...(element.connected_source_net_ids ?? []),
       ])
     } else if (element.type === "pcb_port") {
       const { pcb_port_id, source_port_id } = element
@@ -32,11 +31,7 @@ export const getFullConnectivityMapFromCircuitJson = (
     }
   }
 
-  const connectedNetworks = findConnectedNetworks(connections)
+  const netMap = findConnectedNetworks(connections)
 
-  for (const network of connectedNetworks) {
-    connectivityMap.set(network.netId, network.connectedNodeIds)
-  }
-
-  return connectivityMap
+  return new ConnectivityMap(netMap)
 }

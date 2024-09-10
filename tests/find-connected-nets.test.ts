@@ -14,22 +14,10 @@ test("should create basic connectivity map", () => {
 
   const result = findConnectedNetworks(connections)
 
-  expect(result).toEqual([
-    {
-      netId: "net_0",
-      connectedNodeIds: ["A", "B", "C"],
-    },
-    {
-      netId: "net_3",
-      connectedNodeIds: ["D", "E"],
-    },
-    {
-      netId: "net_5",
-      connectedNodeIds: ["F", "G", "H", "J"],
-    },
-    {
-      netId: "net_8",
-      connectedNodeIds: ["I"],
-    },
-  ])
+  expect(result).toEqual({
+    connectivity_net0: ["A", "B", "C"],
+    connectivity_net3: ["D", "E"],
+    connectivity_net5: ["F", "G", "H", "J"],
+    connectivity_net8: ["I"],
+  })
 })

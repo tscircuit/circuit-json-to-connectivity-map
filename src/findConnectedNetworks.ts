@@ -2,7 +2,7 @@ type NodeId = string
 
 export function findConnectedNetworks(
   connections: Array<NodeId[]>,
-): Array<{ netId: string; connectedNodeIds: string[] }> {
+): Record<string, string[]> {
   const networks: Map<string, Set<string>> = new Map()
   let netCounter = 0
 
@@ -41,8 +41,10 @@ export function findConnectedNetworks(
     }
   }
 
-  return Array.from(networks.entries()).map(([netId, connectedNodes]) => ({
-    netId,
-    connectedNodeIds: Array.from(connectedNodes),
-  }))
+  return Object.fromEntries(
+    Array.from(networks.entries()).map(([netId, connectedNodes]) => [
+      netId,
+      Array.from(connectedNodes),
+    ]),
+  )
 }

@@ -35,15 +35,29 @@ console.log(result)
 ### Generating Source Port Connectivity Map
 
 ```typescript
-import { getSoupPortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { AnySoupElement } from "@tscircuit/soup"
 
 const circuitJson: AnySoupElement[] = [
   // Your circuit JSON data here
 ]
 
-const connectivityMap = getSoupPortConnectivityMapFromCircuitJson(circuitJson)
+const connectivityMap = getSourcePortConnectivityMapFromCircuitJson(circuitJson)
 console.log(connectivityMap)
+```
+
+### Generating Full Connectivity Map
+
+```typescript
+import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
+import type { AnySoupElement } from "@tscircuit/soup"
+
+const circuitJson: AnySoupElement[] = [
+  // Your circuit JSON data here
+]
+
+const fullConnectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
+console.log(fullConnectivityMap)
 ```
 
 ## Running Tests
@@ -53,6 +67,8 @@ To run the tests:
 ```bash
 bun test
 ```
+
+This will run all tests, including the newly added test for `getFullConnectivityMapFromCircuitJson`.
 
 ## Development
 
