@@ -7,7 +7,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup-node src/index.ts --format esm --sourcemap --dts"
+    "build": "tsup-node src/index.ts --format esm --sourcemap --dts",
+    "format:check": "biome format .",
+    "format": "biome format --write ."
   },
   "devDependencies": {
     "@tscircuit/soup": "^0.0.68",
