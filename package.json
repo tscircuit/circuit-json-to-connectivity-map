@@ -1,0 +1,19 @@
+{
+  "name": "circuit-json-to-connectivity-map",
+  "module": "dist/index.js",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup-node src/index.ts --format esm --sourcemap --dts"
+  },
+  "devDependencies": {
+    "@tscircuit/soup": "^0.0.68",
+    "@types/bun": "latest",
+    "tsup": "^8.2.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
