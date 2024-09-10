@@ -1,19 +1,20 @@
 # Circuit JSON to Connectivity Map
 
-This project provides utilities to generate connectivity maps from circuit JSON data. It's designed to work with the `@tscircuit/soup` library and offers functionality to find connected networks and create source port connectivity maps.
+This library provides utilities to generate connectivity maps from circuit JSON data. It's designed to work with the `@tscircuit/soup` library and offers functionality to find connected networks and create connectivity maps.
+
+## Installation
+
+To install the library, use npm or bun:
+
+```bash
+npm add circuit-json-to-connectivity-map
+```
 
 ## Features
 
 - Find connected networks from a list of connections
 - Generate source port connectivity maps from circuit JSON data
-
-## Installation
-
-To install dependencies:
-
-```bash
-bun install
-```
+- Generate full connectivity maps from circuit JSON data
 
 ## Usage
 
@@ -30,6 +31,12 @@ const connections = [
 
 const result = findConnectedNetworks(connections)
 console.log(result)
+
+// Output:
+// {
+//   connectivity_net0: ["A", "B", "C"],
+//   connectivity_net3: ["D", "E"],
+// }
 ```
 
 ### Generating Source Port Connectivity Map
@@ -43,7 +50,15 @@ const circuitJson: AnySoupElement[] = [
 ]
 
 const connectivityMap = getSourcePortConnectivityMapFromCircuitJson(circuitJson)
-console.log(connectivityMap)
+
+// Check if two IDs are connected
+console.log(connectivityMap.areIdsConnected("port1", "port2"))
+
+// Get all IDs connected to a specific net
+console.log(connectivityMap.getIdsConnectedToNet("net1"))
+
+// Get the net connected to a specific ID
+console.log(connectivityMap.getNetConnectedToId("port1"))
 ```
 
 ### Generating Full Connectivity Map
@@ -57,22 +72,42 @@ const circuitJson: AnySoupElement[] = [
 ]
 
 const fullConnectivityMap = getFullConnectivityMapFromCircuitJson(circuitJson)
-console.log(fullConnectivityMap)
+
+// Check if two IDs are connected (including PCB elements)
+console.log(fullConnectivityMap.areIdsConnected("smtpad1", "port1"))
+
+// Get all IDs connected to a specific net
+console.log(fullConnectivityMap.getIdsConnectedToNet("net1"))
+
+// Get the net connected to a specific ID
+console.log(fullConnectivityMap.getNetConnectedToId("pcb_port1"))
 ```
 
-## Running Tests
+## API Reference
 
-To run the tests:
+### `findConnectedNetworks(connections: Array<string[]>): Record<string, string[]>`
 
-```bash
-bun test
-```
+Finds connected networks from a list of connections.
 
-This will run all tests, including the newly added test for `getFullConnectivityMapFromCircuitJson`.
+### `getSourcePortConnectivityMapFromCircuitJson(circuitJson: AnySoupElement[]): ConnectivityMap`
+
+Generates a source port connectivity map from circuit JSON data.
+
+### `getFullConnectivityMapFromCircuitJson(circuitJson: AnySoupElement[]): ConnectivityMap`
+
+Generates a full connectivity map from circuit JSON data, including PCB elements.
+
+### `ConnectivityMap`
+
+A class representing the connectivity map with methods:
+
+- `areIdsConnected(id1: string, id2: string): boolean`
+- `getIdsConnectedToNet(netId: string): string[]`
+- `getNetConnectedToId(id: string): string | undefined`
 
 ## Development
 
-This project uses [Bun](https://bun.sh) as its JavaScript runtime. Bun is a fast all-in-one JavaScript runtime.
+This project uses [Bun](https://bun.sh) as its JavaScript runtime.
 
 To start development:
 
