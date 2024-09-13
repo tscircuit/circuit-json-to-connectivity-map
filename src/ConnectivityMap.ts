@@ -31,6 +31,9 @@ export class ConnectivityMap {
     let netId = this.getNetConnectedToId(ids[0])
     for (const id of ids) {
       const nextNetId = this.getNetConnectedToId(id)
+      if (nextNetId === undefined) {
+        return false
+      }
       if (nextNetId !== netId) {
         return false
       }
