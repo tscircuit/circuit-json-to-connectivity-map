@@ -26,4 +26,15 @@ export class ConnectivityMap {
     const netId2 = this.getNetConnectedToId(id2)
     return netId1 === netId2 || netId2 === id1 || netId2 === id1
   }
+
+  areAllIdsConnected(ids: string[]): boolean {
+    let netId = this.getNetConnectedToId(ids[0])
+    for (const id of ids) {
+      const nextNetId = this.getNetConnectedToId(id)
+      if (nextNetId !== netId) {
+        return false
+      }
+    }
+    return true
+  }
 }
