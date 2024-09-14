@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
-    "@tscircuit/soup": "^0.0.68",
+    "@tscircuit/soup": "^0.0.70",
     "@types/bun": "latest",
     "tsup": "^8.2.4"
   },
