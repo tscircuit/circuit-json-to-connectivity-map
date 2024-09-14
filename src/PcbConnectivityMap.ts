@@ -1,6 +1,6 @@
 import type { AnyCircuitElement, PCBPort, PCBTrace } from "@tscircuit/soup"
 import { ConnectivityMap } from "./ConnectivityMap"
-import { lineIntersectsLine } from "./math-utils/line-intersects-line"
+import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 
 /**
@@ -86,7 +86,7 @@ export class PcbConnectivityMap {
         if (segment2B.route_type !== "wire") continue
 
         // Check if lines are overlapping
-        const isOverlapping = lineIntersectsLine(
+        const isOverlapping = doesLineIntersectLine(
           [segment1A, segment1B],
           [segment2A, segment2B],
           {
