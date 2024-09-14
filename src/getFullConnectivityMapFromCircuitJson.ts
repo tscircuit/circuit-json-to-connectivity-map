@@ -9,11 +9,13 @@ export const getFullConnectivityMapFromCircuitJson = (
 
   for (const element of circuitJson) {
     if (element.type === "source_trace") {
-      connections.push([
-        element.source_trace_id,
-        ...(element.connected_source_port_ids ?? []),
-        ...(element.connected_source_net_ids ?? []),
-      ].filter(Boolean))
+      connections.push(
+        [
+          element.source_trace_id,
+          ...(element.connected_source_port_ids ?? []),
+          ...(element.connected_source_net_ids ?? []),
+        ].filter(Boolean),
+      )
     } else if (element.type === "pcb_port") {
       const { pcb_port_id, source_port_id } = element
       if (source_port_id && pcb_port_id) {
