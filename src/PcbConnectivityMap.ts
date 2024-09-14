@@ -1,4 +1,4 @@
-import type { AnyCircuitElement, PCBTrace } from "@tscircuit/soup"
+import type { AnyCircuitElement, PCBPort, PCBTrace } from "@tscircuit/soup"
 import { ConnectivityMap } from "./ConnectivityMap"
 import { lineIntersectsLine } from "./math-utils/line-intersects-line"
 import { findConnectedNetworks } from "./findConnectedNetworks"
@@ -12,34 +12,59 @@ import { findConnectedNetworks } from "./findConnectedNetworks"
  */
 export class PcbConnectivityMap {
   circuitJson: AnyCircuitElement[]
-  traceMap: Map<string, PCBTrace>
-  connectivityMap: ConnectivityMap
+  traceIdToElm: Map<string, PCBTrace>
+  portIdToElm: Map<string, PCBPort>
+  connMap: ConnectivityMap
 
   constructor(circuitJson: AnyCircuitElement[]) {
     this.circuitJson = circuitJson
-    this.traceMap = new Map()
+    this.traceIdToElm = new Map()
+    this.portIdToElm = new Map()
     this._buildTraceMap()
-    this.connectivityMap = this.buildConnectivityMap()
+    this._buildPortMap()
+    this.connMap = this._buildTraceConnectivityMap()
+  }
+
+  private _buildPortMap() {
+    for (const element of this.circuitJson) {
+      if (element.type === "pcb_port") {
+        this.portIdToElm.set(element.pcb_port_id, element as PCBPort)
+      }
+    }
   }
 
   private _buildTraceMap() {
     for (const element of this.circuitJson) {
       if (element.type === "pcb_trace") {
-        this.traceMap.set(element.pcb_trace_id, element as PCBTrace)
+        this.traceIdToElm.set(element.pcb_trace_id, element as PCBTrace)
       }
     }
   }
 
-  private buildConnectivityMap(): ConnectivityMap {
+  private _buildTraceConnectivityMap(): ConnectivityMap {
     const connections: string[][] = []
-    const traceIds = Array.from(this.traceMap.keys())
+    const traceIds = Array.from(this.traceIdToElm.keys())
 
     for (let i = 0; i < traceIds.length; i++) {
       for (let j = i + 1; j < traceIds.length; j++) {
-        const trace1 = this.traceMap.get(traceIds[i])!
-        const trace2 = this.traceMap.get(traceIds[j])!
+        const trace1 = this.traceIdToElm.get(traceIds[i])!
+        const trace2 = this.traceIdToElm.get(traceIds[j])!
         if (this._arePcbTracesConnected(trace1, trace2)) {
           connections.push([traceIds[i], traceIds[j]])
+        }
+      }
+    }
+
+    for (const port of this.portIdToElm.values()) {
+      for (const trace of this.traceIdToElm.values()) {
+        for (const rp of trace.route) {
+          if (rp.route_type === "wire") {
+            if (rp.start_pcb_port_id === port.pcb_port_id) {
+              connections.push([port.pcb_port_id, trace.pcb_trace_id])
+            } else if (rp.end_pcb_port_id === port.pcb_port_id) {
+              connections.push([trace.pcb_trace_id, port.pcb_port_id])
+            }
+          }
         }
       }
     }
@@ -77,17 +102,26 @@ export class PcbConnectivityMap {
   }
 
   areTracesConnected(traceId1: string, traceId2: string): boolean {
-    return this.connectivityMap.areIdsConnected(traceId1, traceId2)
+    return this.connMap.areIdsConnected(traceId1, traceId2)
   }
 
-  getAllTracesConnectedToTrace(traceId: string): string[] {
-    const netId = this.connectivityMap.getNetConnectedToId(traceId)
-    return netId ? this.connectivityMap.getIdsConnectedToNet(netId) : []
+  getAllTracesConnectedToTrace(traceId: string): PCBTrace[] {
+    const netId = this.connMap.getNetConnectedToId(traceId)
+    return netId
+      ? this.connMap
+          .getIdsConnectedToNet(netId)
+          .filter((id) => this.traceIdToElm.has(id))
+          .map((id) => this.traceIdToElm.get(id) as PCBTrace)
+      : []
   }
 
   getAllTracesConnectedToPort(portId: string): PCBTrace[] {
-    // This method is not implemented yet, as it requires additional information about how ports are connected to traces.
-    // For now, we'll throw an error.
-    throw new Error("getAllTracesConnectedToPort is not implemented yet")
+    const netId = this.connMap.getNetConnectedToId(portId)
+    return netId
+      ? this.connMap
+          .getIdsConnectedToNet(netId)
+          .filter((id) => this.traceIdToElm.has(id))
+          .map((id) => this.traceIdToElm.get(id) as PCBTrace)
+      : []
   }
 }
