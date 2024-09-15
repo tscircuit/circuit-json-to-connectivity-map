@@ -72,6 +72,23 @@ export class PcbConnectivityMap {
     return new ConnectivityMap(findConnectedNetworks(connections))
   }
 
+  addTrace(trace: PCBTrace) {
+    this.traceIdToElm.set(trace.pcb_trace_id, trace)
+    const connections: string[][] = []
+    for (const rp of trace.route) {
+      if (rp.route_type === "wire") {
+        if (rp.start_pcb_port_id) {
+          connections.push([rp.start_pcb_port_id, trace.pcb_trace_id])
+        }
+        if (rp.end_pcb_port_id) {
+          connections.push([rp.end_pcb_port_id, trace.pcb_trace_id])
+        }
+      }
+    }
+
+    this.connMap.addConnections(connections)
+  }
+
   _arePcbTracesConnected(trace1: PCBTrace, trace2: PCBTrace): boolean {
     for (let i = 0; i < trace1.route.length - 1; i++) {
       const segment1A = trace1.route[i]
