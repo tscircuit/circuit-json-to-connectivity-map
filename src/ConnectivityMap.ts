@@ -13,6 +13,35 @@ export class ConnectivityMap {
     }
   }
 
+  addConnections(connections: string[][]) {
+    for (const connection of connections) {
+      let netId: string | undefined
+
+      // Find an existing net for the connection
+      for (const id of connection) {
+        const existingNetId = this.idToNetMap[id]
+        if (existingNetId) {
+          netId = existingNetId
+          break
+        }
+      }
+
+      // If no existing net found, create a new one
+      if (!netId) {
+        netId = `connectivity_net${Object.keys(this.netMap).length}`
+        this.netMap[netId] = []
+      }
+
+      // Add all ids to the net
+      for (const id of connection) {
+        if (!this.netMap[netId].includes(id)) {
+          this.netMap[netId].push(id)
+        }
+        this.idToNetMap[id] = netId
+      }
+    }
+  }
+
   getIdsConnectedToNet(netId: string): string[] {
     return this.netMap[netId] || []
   }
