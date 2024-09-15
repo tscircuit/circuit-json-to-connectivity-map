@@ -33,10 +33,14 @@ export class ConnectivityMap {
         this.netMap[targetNetId] = []
       } else if (existingNets.size === 1) {
         // If only one existing net found, use it
-        targetNetId = existingNets.values().next().value ?? `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId =
+          existingNets.values().next().value ??
+          `connectivity_net${Object.keys(this.netMap).length}`
       } else {
         // If multiple nets found, merge them
-        targetNetId = existingNets.values().next().value ?? `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId =
+          existingNets.values().next().value ??
+          `connectivity_net${Object.keys(this.netMap).length}`
         for (const netId of existingNets) {
           if (netId !== targetNetId) {
             this.netMap[targetNetId].push(...this.netMap[netId])

@@ -11,20 +11,26 @@ test("ConnectivityMap.addConnections should merge existing nets correctly", () =
   const connectivityMap = new ConnectivityMap(initialNetMap)
 
   connectivityMap.addConnections([
-    ["B", "C"],  // This should merge net1 and net2
-    ["F", "G"],  // This should add G to net3
-    ["H", "I"],  // This should create a new net
+    ["B", "C"], // This should merge net1 and net2
+    ["F", "G"], // This should add G to net3
+    ["H", "I"], // This should create a new net
   ])
 
   // Check if net1 and net2 are merged
   expect(connectivityMap.areIdsConnected("A", "D")).toBe(true)
-  expect(connectivityMap.getIdsConnectedToNet(connectivityMap.getNetConnectedToId("A")!).sort())
-    .toEqual(["A", "B", "C", "D"])
+  expect(
+    connectivityMap
+      .getIdsConnectedToNet(connectivityMap.getNetConnectedToId("A")!)
+      .sort(),
+  ).toEqual(["A", "B", "C", "D"])
 
   // Check if G is added to net3
   expect(connectivityMap.areIdsConnected("E", "G")).toBe(true)
-  expect(connectivityMap.getIdsConnectedToNet(connectivityMap.getNetConnectedToId("E")!).sort())
-    .toEqual(["E", "F", "G"])
+  expect(
+    connectivityMap
+      .getIdsConnectedToNet(connectivityMap.getNetConnectedToId("E")!)
+      .sort(),
+  ).toEqual(["E", "F", "G"])
 
   // Check if H and I are in a new net
   expect(connectivityMap.areIdsConnected("H", "I")).toBe(true)
