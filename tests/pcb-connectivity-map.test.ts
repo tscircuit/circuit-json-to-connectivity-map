@@ -138,9 +138,15 @@ test("PcbConnectivityMap should initialize empty when no circuit JSON is provide
 
   expect(emptyPcbConnectivityMap.traceIdToElm.size).toBe(1)
   expect(emptyPcbConnectivityMap.traceIdToElm.get("trace1")).toEqual(newTrace)
-  expect(emptyPcbConnectivityMap.connMap.areIdsConnected("trace1", "port1")).toBe(true)
-  expect(emptyPcbConnectivityMap.connMap.areIdsConnected("trace1", "port2")).toBe(true)
-  expect(emptyPcbConnectivityMap.connMap.areIdsConnected("port1", "port2")).toBe(true)
+  expect(
+    emptyPcbConnectivityMap.connMap.areIdsConnected("trace1", "port1"),
+  ).toBe(true)
+  expect(
+    emptyPcbConnectivityMap.connMap.areIdsConnected("trace1", "port2"),
+  ).toBe(true)
+  expect(
+    emptyPcbConnectivityMap.connMap.areIdsConnected("port1", "port2"),
+  ).toBe(true)
 })
 
 test("PcbConnectivityMap.addTrace should correctly add a new trace and update connections", () => {
