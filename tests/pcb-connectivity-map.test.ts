@@ -102,6 +102,47 @@ test("PcbConnectivityMap should correctly identify connected traces and ports", 
   ).not.toContain("trace2")
 })
 
+test("PcbConnectivityMap should initialize empty when no circuit JSON is provided", () => {
+  const emptyPcbConnectivityMap = new PcbConnectivityMap()
+
+  expect(emptyPcbConnectivityMap.circuitJson).toEqual([])
+  expect(emptyPcbConnectivityMap.traceIdToElm.size).toBe(0)
+  expect(emptyPcbConnectivityMap.portIdToElm.size).toBe(0)
+  expect(Object.keys(emptyPcbConnectivityMap.connMap.netMap).length).toBe(0)
+
+  // Test adding a trace to the empty map
+  const newTrace: PCBTrace = {
+    type: "pcb_trace",
+    pcb_trace_id: "trace1",
+    route: [
+      {
+        x: 0,
+        y: 0,
+        route_type: "wire",
+        width: 1,
+        layer: "top",
+        start_pcb_port_id: "port1",
+      },
+      {
+        x: 10,
+        y: 0,
+        route_type: "wire",
+        width: 1,
+        layer: "top",
+        end_pcb_port_id: "port2",
+      },
+    ],
+  }
+
+  emptyPcbConnectivityMap.addTrace(newTrace)
+
+  expect(emptyPcbConnectivityMap.traceIdToElm.size).toBe(1)
+  expect(emptyPcbConnectivityMap.traceIdToElm.get("trace1")).toEqual(newTrace)
+  expect(emptyPcbConnectivityMap.connMap.areIdsConnected("trace1", "port1")).toBe(true)
+  expect(emptyPcbConnectivityMap.connMap.areIdsConnected("trace1", "port2")).toBe(true)
+  expect(emptyPcbConnectivityMap.connMap.areIdsConnected("port1", "port2")).toBe(true)
+})
+
 test("PcbConnectivityMap.addTrace should correctly add a new trace and update connections", () => {
   const circuitJson: AnyCircuitElement[] = [
     {
