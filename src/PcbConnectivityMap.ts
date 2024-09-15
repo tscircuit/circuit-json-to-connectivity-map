@@ -16,13 +16,17 @@ export class PcbConnectivityMap {
   portIdToElm: Map<string, PCBPort>
   connMap: ConnectivityMap
 
-  constructor(circuitJson: AnyCircuitElement[]) {
-    this.circuitJson = circuitJson
+  constructor(circuitJson?: AnyCircuitElement[]) {
+    this.circuitJson = circuitJson || []
     this.traceIdToElm = new Map()
     this.portIdToElm = new Map()
-    this._buildTraceMap()
-    this._buildPortMap()
-    this.connMap = this._buildTraceConnectivityMap()
+    if (circuitJson) {
+      this._buildTraceMap()
+      this._buildPortMap()
+      this.connMap = this._buildTraceConnectivityMap()
+    } else {
+      this.connMap = new ConnectivityMap({})
+    }
   }
 
   private _buildPortMap() {
