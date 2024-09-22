@@ -1,4 +1,4 @@
-import type { AnyCircuitElement, PCBPort, PCBTrace } from "@tscircuit/soup"
+import type { AnyCircuitElement, PCBPort, PCBTrace } from "circuit-json"
 import { ConnectivityMap } from "./ConnectivityMap"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { findConnectedNetworks } from "./findConnectedNetworks"
