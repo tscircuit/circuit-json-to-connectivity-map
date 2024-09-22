@@ -43,9 +43,9 @@ console.log(result)
 
 ```typescript
 import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnyCircuitElement } from "circuit-json"
 
-const circuitJson: AnySoupElement[] = [
+const circuitJson: AnyCircuitElement[] = [
   // Your circuit JSON data here
 ]
 
@@ -65,9 +65,9 @@ console.log(connectivityMap.getNetConnectedToId("port1"))
 
 ```typescript
 import { getFullConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnyCircuitElement } from "circuit-json"
 
-const circuitJson: AnySoupElement[] = [
+const circuitJson: AnyCircuitElement[] = [
   // Your circuit JSON data here
 ]
 
@@ -89,11 +89,11 @@ console.log(fullConnectivityMap.getNetConnectedToId("pcb_port1"))
 
 Finds connected networks from a list of connections.
 
-### `getSourcePortConnectivityMapFromCircuitJson(circuitJson: AnySoupElement[]): ConnectivityMap`
+### `getSourcePortConnectivityMapFromCircuitJson(circuitJson: AnyCircuitElement[]): ConnectivityMap`
 
 Generates a source port connectivity map from circuit JSON data.
 
-### `getFullConnectivityMapFromCircuitJson(circuitJson: AnySoupElement[]): ConnectivityMap`
+### `getFullConnectivityMapFromCircuitJson(circuitJson: AnyCircuitElement[]): ConnectivityMap`
 
 Generates a full connectivity map from circuit JSON data, including PCB elements.
 

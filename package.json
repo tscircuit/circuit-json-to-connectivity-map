@@ -12,8 +12,8 @@
     "format": "biome format --write ."
   },
   "devDependencies": {
+    "circuit-json": "^0.0.79",
     "@biomejs/biome": "^1.9.0",
-    "@tscircuit/soup": "^0.0.70",
     "@types/bun": "latest",
     "tsup": "^8.2.4"
   },
