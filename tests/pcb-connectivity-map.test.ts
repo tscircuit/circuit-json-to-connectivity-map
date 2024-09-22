@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import { PcbConnectivityMap } from "../src/PcbConnectivityMap"
-import type { AnyCircuitElement, PCBTrace } from "@tscircuit/soup"
+import type { AnyCircuitElement, PCBTrace } from "circuit-json"
 
 test("PcbConnectivityMap should correctly identify connected traces and ports", () => {
   const circuitJson: AnyCircuitElement[] = [
