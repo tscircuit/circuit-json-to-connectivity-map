@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { getFullConnectivityMapFromCircuitJson } from "../src"
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnyCircuitElement } from "circuit-json"
 
 test("should create full connectivity map from circuit JSON", () => {
-  const circuitJson: AnySoupElement[] = [
+  const circuitJson: AnyCircuitElement[] = [
     {
       type: "source_trace",
       source_trace_id: "trace1",

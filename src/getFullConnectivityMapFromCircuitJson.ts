@@ -1,9 +1,9 @@
-import type { AnySoupElement } from "@tscircuit/soup"
+import type { AnyCircuitElement } from "circuit-json"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 import { ConnectivityMap } from "./ConnectivityMap"
 
 export const getFullConnectivityMapFromCircuitJson = (
-  circuitJson: AnySoupElement[],
+  circuitJson: AnyCircuitElement[],
 ) => {
   const connections: string[][] = []
 
