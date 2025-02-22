@@ -27,4 +27,8 @@ test("ConnectivityMap.addConnections should add new connections correctly", () =
   const fNetId = connectivityMap.getNetConnectedToId("F")
   const allConnectedToF = connectivityMap.getIdsConnectedToNet(fNetId!)
   expect(allConnectedToF.sort()).toEqual(["F", "G"])
+
+  expect(connectivityMap.areIdsConnected("unknown1", "unknown2")).toBe(false)
+  expect(connectivityMap.areIdsConnected("A", "unknown2")).toBe(false)
+  expect(connectivityMap.areIdsConnected("unknown1", "unknown1")).toBe(true)
 })
