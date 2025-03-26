@@ -36,6 +36,11 @@ export const getFullConnectivityMapFromCircuitJson = (
       if (source_trace_id && pcb_trace_id) {
         connections.push([pcb_trace_id, source_trace_id])
       }
+    } else if (element.type === "pcb_via") {
+      const { pcb_via_id, pcb_trace_id } = element
+      if (pcb_trace_id && pcb_via_id) {
+        connections.push([pcb_via_id, pcb_trace_id])
+      }
     }
   }
 
