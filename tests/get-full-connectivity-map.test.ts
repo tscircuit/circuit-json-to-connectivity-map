@@ -53,3 +53,40 @@ test("should create full connectivity map from circuit JSON", () => {
 
   expect(result.areIdsConnected("smtpad1", "port1")).toBe(true)
 })
+
+test("should handle internally_connected_source_port_ids in source_component for full connectivity map", () => {
+  const circuitJson: any[] = [
+    {
+      type: "source_component",
+      source_component_id: "sc1",
+      name: "C1",
+      internally_connected_source_port_ids: [
+        ["p1", "p2"],
+        ["p3", "p4"],
+      ],
+    },
+    {
+      type: "source_trace",
+      source_trace_id: "trace1",
+      connected_source_port_ids: ["p2", "p5"],
+    },
+    {
+      type: "pcb_port",
+      pcb_port_id: "pcb_p5",
+      source_port_id: "p5",
+      x: 0,
+      y: 0,
+      pcb_component_id: "component1",
+      layers: ["top"],
+    },
+  ]
+
+  const result = getFullConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(result.areIdsConnected("p1", "p2")).toBe(true)
+  expect(result.areIdsConnected("p3", "p4")).toBe(true)
+  expect(result.areIdsConnected("p1", "p3")).toBe(false)
+  expect(result.areIdsConnected("p1", "p5")).toBe(true)
+  expect(result.areIdsConnected("p2", "p5")).toBe(true)
+  expect(result.areIdsConnected("p1", "pcb_p5")).toBe(true)
+})

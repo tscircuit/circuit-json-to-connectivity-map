@@ -13,6 +13,12 @@ export const getSourcePortConnectivityMapFromCircuitJson = (
         ...(element.connected_source_port_ids ?? []),
         ...(element.connected_source_net_ids ?? []),
       ])
+    } else if (element.type === "source_component") {
+      if (element.internally_connected_source_port_ids) {
+        for (const portGroup of element.internally_connected_source_port_ids) {
+          connections.push(portGroup)
+        }
+      }
     }
   }
 
