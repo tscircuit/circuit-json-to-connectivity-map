@@ -41,6 +41,12 @@ export const getFullConnectivityMapFromCircuitJson = (
       if (pcb_trace_id && pcb_via_id) {
         connections.push([pcb_via_id, pcb_trace_id])
       }
+    } else if (element.type === "source_component") {
+      if (element.internally_connected_source_port_ids) {
+        for (const portGroup of element.internally_connected_source_port_ids) {
+          connections.push(portGroup)
+        }
+      }
     }
   }
 
