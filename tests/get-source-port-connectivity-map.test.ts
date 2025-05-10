@@ -46,10 +46,10 @@ test("should handle internally_connected_source_port_ids in source_component for
       connected_source_port_ids: ["p2", "p5"],
     },
     {
-      type: "source_port", // Add a source_port to connect to pcb elements if needed for other tests
+      type: "source_port",
       source_port_id: "p5",
       name: "P5",
-      source_component_id: "sc1", // Assuming p5 is part of sc1 for consistency
+      source_component_id: "sc1",
     },
   ]
 
