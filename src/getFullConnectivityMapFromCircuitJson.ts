@@ -33,8 +33,22 @@ export const getFullConnectivityMapFromCircuitJson = (
       }
     } else if (element.type === "pcb_trace") {
       const { pcb_trace_id, source_trace_id } = element
+      const route = Array.isArray(element.route)
+        ? element.route.filter((rp) => rp && rp.route_type === "wire")
+        : []
       if (source_trace_id && pcb_trace_id) {
         connections.push([pcb_trace_id, source_trace_id])
+      }
+      if (Array.isArray(route)) {
+        const startId = route.find(
+          (rp) => rp && rp.start_pcb_port_id,
+        )?.start_pcb_port_id
+        const endId = route.find(
+          (rp) => rp && rp.end_pcb_port_id,
+        )?.end_pcb_port_id
+        if (startId && pcb_trace_id && endId) {
+          connections.push([startId, pcb_trace_id, endId])
+        }
       }
     } else if (element.type === "pcb_via") {
       const { pcb_via_id, pcb_trace_id } = element
