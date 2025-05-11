@@ -1,8 +1,4 @@
-import type {
-  AnyCircuitElement,
-  PcbTraceRoutePoint,
-  PcbTraceRoutePointWire,
-} from "circuit-json"
+import type { AnyCircuitElement } from "circuit-json"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 import { ConnectivityMap } from "./ConnectivityMap"
 
