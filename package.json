@@ -18,7 +18,7 @@
     "tsup": "^8.2.4"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@tscircuit/math-utils": "^0.0.9"
