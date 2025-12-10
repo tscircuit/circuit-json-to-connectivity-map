@@ -61,3 +61,34 @@ test("should handle internally_connected_source_port_ids in source_component for
   expect(result.areIdsConnected("p1", "p5")).toBe(true)
   expect(result.areIdsConnected("p2", "p5")).toBe(true)
 })
+
+test("should handle source_component_internal_connection elements", () => {
+  const circuitJson: any[] = [
+    {
+      type: "source_component_internal_connection",
+      source_component_internal_connection_id: "scic1",
+      source_component_id: "sc1",
+      source_port_ids: ["p1", "p2"],
+    },
+    {
+      type: "source_component_internal_connection",
+      source_component_internal_connection_id: "scic2",
+      source_component_id: "sc1",
+      source_port_ids: ["p3", "p4"],
+    },
+    {
+      type: "source_trace",
+      source_trace_id: "trace1",
+      connected_source_port_ids: ["p2", "p5"],
+      connected_source_net_ids: [],
+    },
+  ]
+
+  const result = getSourcePortConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(result.areIdsConnected("p1", "p2")).toBe(true)
+  expect(result.areIdsConnected("p3", "p4")).toBe(true)
+  expect(result.areIdsConnected("p1", "p3")).toBe(false)
+  expect(result.areIdsConnected("p1", "p5")).toBe(true)
+  expect(result.areIdsConnected("p2", "p5")).toBe(true)
+})
