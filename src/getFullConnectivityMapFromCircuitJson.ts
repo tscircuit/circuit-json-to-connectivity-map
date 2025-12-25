@@ -36,16 +36,33 @@ export const getFullConnectivityMapFromCircuitJson = (
       const route = Array.isArray(element.route)
         ? element.route.filter((rp) => rp && rp.route_type === "wire")
         : []
+
       if (source_trace_id && pcb_trace_id) {
-        connections.push([pcb_trace_id, source_trace_id])
+        // Handle combined source_trace_id like "source_net_4__source_net_5"
+        if (source_trace_id.includes("__")) {
+          const parts = source_trace_id.split("__")
+          for (const part of parts) {
+            if (part) {
+              connections.push([pcb_trace_id, part])
+            }
+          }
+        } else {
+          connections.push([pcb_trace_id, source_trace_id])
+        }
       }
-      if (Array.isArray(route)) {
+
+      if (Array.isArray(route) && route.length > 0 && pcb_trace_id) {
+        // Handle start/end port IDs independently
         const startId = route.find(
           (rp) => rp?.start_pcb_port_id,
         )?.start_pcb_port_id
         const endId = route.find((rp) => rp?.end_pcb_port_id)?.end_pcb_port_id
-        if (startId && pcb_trace_id && endId) {
-          connections.push([startId, pcb_trace_id, endId])
+
+        if (startId) {
+          connections.push([startId, pcb_trace_id])
+        }
+        if (endId) {
+          connections.push([endId, pcb_trace_id])
         }
       }
     } else if (element.type === "pcb_via") {
