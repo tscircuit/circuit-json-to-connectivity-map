@@ -1,4 +1,4 @@
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbTraceRoutePointWire } from "circuit-json"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 import { ConnectivityMap } from "./ConnectivityMap"
 
@@ -33,8 +33,11 @@ export const getFullConnectivityMapFromCircuitJson = (
       }
     } else if (element.type === "pcb_trace") {
       const { pcb_trace_id, source_trace_id } = element
-      const route = Array.isArray(element.route)
-        ? element.route.filter((rp) => rp && rp.route_type === "wire")
+      const route: PcbTraceRoutePointWire[] = Array.isArray(element.route)
+        ? (element.route.filter(
+            (rp): rp is PcbTraceRoutePointWire =>
+              rp != null && rp.route_type === "wire",
+          ) as PcbTraceRoutePointWire[])
         : []
 
       if (source_trace_id && pcb_trace_id) {
@@ -51,12 +54,14 @@ export const getFullConnectivityMapFromCircuitJson = (
         }
       }
 
-      if (Array.isArray(route) && route.length > 0 && pcb_trace_id) {
+      if (route.length > 0 && pcb_trace_id) {
         // Handle start/end port IDs independently
         const startId = route.find(
-          (rp) => rp?.start_pcb_port_id,
+          (rp: PcbTraceRoutePointWire) => rp.start_pcb_port_id,
         )?.start_pcb_port_id
-        const endId = route.find((rp) => rp?.end_pcb_port_id)?.end_pcb_port_id
+        const endId = route.find(
+          (rp: PcbTraceRoutePointWire) => rp.end_pcb_port_id,
+        )?.end_pcb_port_id
 
         if (startId) {
           connections.push([startId, pcb_trace_id])
