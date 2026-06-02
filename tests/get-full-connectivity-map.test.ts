@@ -90,3 +90,68 @@ test("should handle internally_connected_source_port_ids in source_component for
   expect(result.areIdsConnected("p2", "p5")).toBe(true)
   expect(result.areIdsConnected("p1", "pcb_p5")).toBe(true)
 })
+
+test("should connect generated pcb trace branches by known ids in connection_name", () => {
+  const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "source_trace",
+      source_trace_id: "source_trace_1",
+      connected_source_port_ids: ["source_port_1"],
+      connected_source_net_ids: [],
+    },
+    {
+      type: "source_trace",
+      source_trace_id: "source_trace_2",
+      connected_source_port_ids: ["source_port_2"],
+      connected_source_net_ids: [],
+    },
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "source_trace_1__source_trace_2_mst0_0",
+      connection_name: "source_trace_1__source_trace_2",
+      route: [
+        { route_type: "wire", x: 0, y: 0, width: 0.2, layer: "top" },
+        { route_type: "wire", x: 1, y: 0, width: 0.2, layer: "top" },
+      ],
+    } as AnyCircuitElement,
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "source_trace_1__source_trace_2_mst1_0",
+      connection_name: "source_trace_1__source_trace_2",
+      route: [
+        { route_type: "wire", x: 10, y: 0, width: 0.2, layer: "top" },
+        { route_type: "wire", x: 11, y: 0, width: 0.2, layer: "top" },
+      ],
+    } as AnyCircuitElement,
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "source_trace_10__source_trace_11_mst0_0",
+      connection_name: "source_trace_10__source_trace_11",
+      route: [
+        { route_type: "wire", x: 20, y: 0, width: 0.2, layer: "top" },
+        { route_type: "wire", x: 21, y: 0, width: 0.2, layer: "top" },
+      ],
+    } as AnyCircuitElement,
+  ]
+
+  const result = getFullConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(
+    result.areIdsConnected(
+      "source_trace_1__source_trace_2_mst0_0",
+      "source_trace_1__source_trace_2_mst1_0",
+    ),
+  ).toBe(true)
+  expect(
+    result.areIdsConnected(
+      "source_trace_1__source_trace_2_mst0_0",
+      "source_trace_1",
+    ),
+  ).toBe(true)
+  expect(
+    result.areIdsConnected(
+      "source_trace_10__source_trace_11_mst0_0",
+      "source_trace_1",
+    ),
+  ).toBe(false)
+})

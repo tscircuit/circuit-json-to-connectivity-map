@@ -2,10 +2,54 @@ import type { AnyCircuitElement } from "circuit-json"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 import { ConnectivityMap } from "./ConnectivityMap"
 
+type PcbTraceWithConnectionName = {
+  connection_name?: string
+}
+
+const getSourceConnectivityIds = (
+  circuitJson: AnyCircuitElement[],
+): Set<string> => {
+  const sourceConnectivityIds = new Set<string>()
+
+  for (const element of circuitJson) {
+    if (element.type === "source_trace") {
+      sourceConnectivityIds.add(element.source_trace_id)
+      for (const sourcePortId of element.connected_source_port_ids ?? []) {
+        sourceConnectivityIds.add(sourcePortId)
+      }
+      for (const sourceNetId of element.connected_source_net_ids ?? []) {
+        sourceConnectivityIds.add(sourceNetId)
+      }
+    } else if (element.type === "source_port") {
+      sourceConnectivityIds.add(element.source_port_id)
+    } else if (element.type === "source_net") {
+      sourceConnectivityIds.add(element.source_net_id)
+    } else if (element.type === "pcb_port") {
+      if (element.source_port_id) {
+        sourceConnectivityIds.add(element.source_port_id)
+      }
+    }
+  }
+
+  return sourceConnectivityIds
+}
+
+const getSourceConnectivityIdsFromConnectionName = (
+  connectionName: string | undefined,
+  sourceConnectivityIds: Set<string>,
+): string[] => {
+  if (!connectionName) return []
+
+  return connectionName
+    .split("__")
+    .filter((id) => sourceConnectivityIds.has(id))
+}
+
 export const getFullConnectivityMapFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
 ) => {
   const connections: string[][] = []
+  const sourceConnectivityIds = getSourceConnectivityIds(circuitJson)
 
   for (const element of circuitJson) {
     if (element.type === "source_trace") {
@@ -33,11 +77,21 @@ export const getFullConnectivityMapFromCircuitJson = (
       }
     } else if (element.type === "pcb_trace") {
       const { pcb_trace_id, source_trace_id } = element
+      const connectionName = (element as PcbTraceWithConnectionName)
+        .connection_name
       const route = Array.isArray(element.route)
         ? element.route.filter((rp) => rp && rp.route_type === "wire")
         : []
       if (source_trace_id && pcb_trace_id) {
         connections.push([pcb_trace_id, source_trace_id])
+      }
+      const sourceIdsFromConnectionName =
+        getSourceConnectivityIdsFromConnectionName(
+          connectionName,
+          sourceConnectivityIds,
+        )
+      if (pcb_trace_id && sourceIdsFromConnectionName.length > 0) {
+        connections.push([pcb_trace_id, ...sourceIdsFromConnectionName])
       }
       if (Array.isArray(route)) {
         const startId = route.find(
