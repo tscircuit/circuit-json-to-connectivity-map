@@ -7,30 +7,29 @@ test("repro breakout sot23 regulator power rail connectivity", () => {
   const circuitJson = circuitJsonFixture as AnyCircuitElement[]
   const connMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
-  // BUG: these one-ended merged branch traces should be connected by the
-  // source_trace ids encoded in connection_name.
+  // Branch traces are connected through their assigned source_trace_id.
   expect(
     connMap.areIdsConnected(
       "source_trace_7__source_trace_9_mst0_0",
       "source_trace_7__source_trace_9_mst1_0",
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     connMap.areIdsConnected(
       "source_trace_7__source_trace_9_mst0_0",
       "source_trace_7",
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     connMap.areIdsConnected(
       "source_trace_4__source_trace_8_mst0_0",
       "source_trace_4__source_trace_8_mst1_0",
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     connMap.areIdsConnected(
       "source_trace_4__source_trace_8_mst0_0",
       "source_trace_4",
     ),
-  ).toBe(false)
+  ).toBe(true)
 })

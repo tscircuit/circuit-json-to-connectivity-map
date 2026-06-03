@@ -2,7 +2,7 @@
   {
     "type": "source_project_metadata",
     "source_project_metadata_id": "source_project_metadata_0",
-    "software_used_string": "@tscircuit/core@0.0.1284"
+    "software_used_string": "@tscircuit/core@0.0.1287"
   },
   {
     "type": "source_group",
@@ -2164,8 +2164,8 @@
         "end_pcb_port_id": "pcb_port_5"
       }
     ],
-    "source_trace_id": "source_trace_2",
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_2"
   },
   {
     "type": "pcb_trace",
@@ -2196,8 +2196,8 @@
         "end_pcb_port_id": "pcb_port_2"
       }
     ],
-    "source_trace_id": "source_trace_2",
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_2"
   },
   {
     "type": "pcb_trace",
@@ -2228,7 +2228,8 @@
         "end_pcb_port_id": "pcb_port_1"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_1"
   },
   {
     "type": "pcb_trace",
@@ -2258,7 +2259,8 @@
         "end_pcb_port_id": "pcb_port_1"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_1"
   },
   {
     "type": "pcb_trace",
@@ -2303,7 +2305,8 @@
         "end_pcb_port_id": "pcb_port_1"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_3"
   },
   {
     "type": "pcb_trace",
@@ -2333,8 +2336,8 @@
         "layer": "top"
       }
     ],
-    "source_trace_id": "source_trace_0",
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_0"
   },
   {
     "type": "pcb_trace",
@@ -2446,8 +2449,8 @@
         "end_pcb_port_id": "pcb_port_3"
       }
     ],
-    "source_trace_id": "source_trace_0",
-    "subcircuit_id": "subcircuit_source_group_0"
+    "subcircuit_id": "subcircuit_source_group_0",
+    "source_trace_id": "source_trace_0"
   },
   {
     "type": "pcb_via",
@@ -2515,7 +2518,8 @@
         "layer": "top"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_1"
+    "subcircuit_id": "subcircuit_source_group_1",
+    "source_trace_id": "source_trace_7"
   },
   {
     "type": "pcb_trace",
@@ -2608,7 +2612,8 @@
         "layer": "top"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_1"
+    "subcircuit_id": "subcircuit_source_group_1",
+    "source_trace_id": "source_trace_9"
   },
   {
     "type": "pcb_trace",
@@ -2701,8 +2706,8 @@
         "layer": "top"
       }
     ],
-    "source_trace_id": "source_trace_6",
-    "subcircuit_id": "subcircuit_source_group_1"
+    "subcircuit_id": "subcircuit_source_group_1",
+    "source_trace_id": "source_trace_6"
   },
   {
     "type": "pcb_trace",
@@ -2767,7 +2772,8 @@
         "end_pcb_port_id": "pcb_port_11"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_1"
+    "subcircuit_id": "subcircuit_source_group_1",
+    "source_trace_id": "source_trace_4"
   },
   {
     "type": "pcb_trace",
@@ -2798,91 +2804,8 @@
         "end_pcb_port_id": "pcb_port_9"
       }
     ],
-    "subcircuit_id": "subcircuit_source_group_1"
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.COUT > port.pos] overlaps with trace[.RLED > port.anode] (accidental contact)",
-    "pcb_trace_id": "source_trace_2__source_port_2_mst0_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_0",
-    "pcb_component_ids": [],
-    "center": {
-      "x": 0.8200000000000003,
-      "y": 2.7199999999999998
-    },
-    "pcb_port_ids": ["pcb_port_5", "pcb_port_11"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.CIN > port.neg, .U1 > port.pin2] overlaps with trace[.U1 > port.pin2] (accidental contact)",
-    "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst0_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_1",
-    "pcb_component_ids": [],
-    "center": {
-      "x": -1.137,
-      "y": -0.95
-    },
-    "pcb_port_ids": ["pcb_port_4", "pcb_port_1"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.U1 > port.pin2] overlaps with trace[.JOUT > port.pin2] (accidental contact)",
-    "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst1_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_2",
-    "pcb_component_ids": [],
-    "center": {
-      "x": -4.68,
-      "y": -1.95
-    },
-    "pcb_port_ids": ["pcb_port_1", "pcb_port_10"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.U1 > port.pin2] overlaps with trace[.JIN > port.pin2] (accidental contact)",
-    "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst1_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_3",
-    "pcb_component_ids": [],
-    "center": {
-      "x": -4.68,
-      "y": -1.95
-    },
-    "pcb_port_ids": ["pcb_port_1", "pcb_port_8"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.U1 > port.pin2] overlaps with pcb_smtpad \"pcb_port[.U1 > .GND]\" (accidental contact)",
-    "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst1_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_4",
-    "pcb_component_ids": ["pcb_component_0"],
-    "center": {
-      "x": -1.437,
-      "y": -1.25
-    },
-    "pcb_port_ids": ["pcb_port_1", "pcb_port_1"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.U1 > port.pin2] overlaps with trace[.COUT > port.neg, .U1 > port.pin2] (accidental contact)",
-    "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst1_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_5",
-    "pcb_component_ids": [],
-    "center": {
-      "x": -1.137,
-      "y": -0.95
-    },
-    "pcb_port_ids": ["pcb_port_1", "pcb_port_6"]
+    "subcircuit_id": "subcircuit_source_group_1",
+    "source_trace_id": "source_trace_4"
   },
   {
     "type": "pcb_trace_error",
@@ -2894,51 +2817,9 @@
       "y": -0.25
     },
     "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_6",
+    "pcb_trace_error_id": "pcb_trace_error_0",
     "pcb_component_ids": ["pcb_component_3"],
     "pcb_port_ids": ["pcb_port_3", "pcb_port_8"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.JIN > port.pin2] overlaps with pcb_plated_hole \"pcb_plated_hole[#pcb_plated_hole_1]\" (accidental contact)",
-    "pcb_trace_id": "source_trace_7__source_trace_9_mst0_0",
-    "center": {
-      "x": -4.73,
-      "y": -1
-    },
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_7",
-    "pcb_component_ids": ["pcb_component_3"],
-    "pcb_port_ids": ["pcb_port_8", "pcb_port_8"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.JIN > port.pin2] overlaps with trace[.JOUT > port.pin2] (accidental contact)",
-    "pcb_trace_id": "source_trace_7__source_trace_9_mst0_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_8",
-    "pcb_component_ids": [],
-    "center": {
-      "x": -4.68,
-      "y": -1.95
-    },
-    "pcb_port_ids": ["pcb_port_8", "pcb_port_10"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.JOUT > port.pin2] overlaps with pcb_plated_hole \"pcb_plated_hole[#pcb_plated_hole_3]\" (accidental contact)",
-    "pcb_trace_id": "source_trace_7__source_trace_9_mst1_0",
-    "center": {
-      "x": 7.27,
-      "y": -1
-    },
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_9",
-    "pcb_component_ids": ["pcb_component_4"],
-    "pcb_port_ids": ["pcb_port_10", "pcb_port_10"]
   },
   {
     "type": "pcb_trace_error",
@@ -2950,37 +2831,9 @@
       "y": -0.25
     },
     "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_10",
+    "pcb_trace_error_id": "pcb_trace_error_1",
     "pcb_component_ids": ["pcb_component_3"],
     "pcb_port_ids": ["pcb_port_7", "pcb_port_8"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.RLED > port.anode] overlaps with trace[.RLED > port.anode, .JOUT > port.pin1] (accidental contact)",
-    "pcb_trace_id": "source_trace_4__source_trace_8_mst0_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_11",
-    "pcb_component_ids": [],
-    "center": {
-      "x": 3.8900000000000006,
-      "y": 4
-    },
-    "pcb_port_ids": ["pcb_port_11", "pcb_port_9"]
-  },
-  {
-    "type": "pcb_trace_error",
-    "error_type": "pcb_trace_error",
-    "message": "PCB trace trace[.RLED > port.anode] overlaps with pcb_smtpad \"pcb_port[.RLED > .pin1]\" (accidental contact)",
-    "pcb_trace_id": "source_trace_4__source_trace_8_mst0_0",
-    "source_trace_id": "",
-    "pcb_trace_error_id": "pcb_trace_error_12",
-    "pcb_component_ids": ["pcb_component_5"],
-    "center": {
-      "x": 3.6200000000000006,
-      "y": 3.73
-    },
-    "pcb_port_ids": ["pcb_port_11", "pcb_port_11"]
   },
   {
     "type": "pcb_trace_error",
@@ -2988,7 +2841,7 @@
     "source_trace_id": "source_trace_2",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_2__source_port_2_mst0_0",
-    "pcb_trace_error_id": "pcb_trace_error_13",
+    "pcb_trace_error_id": "pcb_trace_error_2",
     "center": {
       "x": 0.8200000000000003,
       "y": 2.7199999999999998
@@ -2998,17 +2851,17 @@
   },
   {
     "type": "pcb_trace_error",
-    "message": "Trace [trace[.U1 > port.pin2]] has disconnected endpoint at (-4.68, -1.95)",
-    "source_trace_id": "!source_trace_1__source_trace_3__source_port_1_mst1_0",
+    "message": "Trace [trace[.U1 > port.pin2]] is missing a connection to smtpad[.CIN > .pin2]",
+    "source_trace_id": "source_trace_1",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst1_0",
-    "pcb_trace_error_id": "pcb_trace_error_14",
+    "pcb_trace_error_id": "pcb_trace_error_3",
     "center": {
       "x": -4.68,
       "y": -1.95
     },
     "pcb_component_ids": [],
-    "pcb_port_ids": []
+    "pcb_port_ids": ["pcb_port_4"]
   },
   {
     "type": "pcb_trace_error",
@@ -3016,7 +2869,7 @@
     "source_trace_id": "source_trace_0",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_0__source_port_0_mst0_0",
-    "pcb_trace_error_id": "pcb_trace_error_15",
+    "pcb_trace_error_id": "pcb_trace_error_4",
     "center": {
       "x": -4.68,
       "y": -0.176
@@ -3026,31 +2879,31 @@
   },
   {
     "type": "pcb_trace_error",
-    "message": "Trace [trace[.JIN > port.pin2]] has disconnected endpoint at (-4.68, -1.95)",
-    "source_trace_id": "!source_trace_7__source_trace_9_mst0_0",
+    "message": "Trace [trace[.JIN > port.pin2]] is missing a connection to smtpad[.U1 > .GND]",
+    "source_trace_id": "source_trace_7",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_7__source_trace_9_mst0_0",
-    "pcb_trace_error_id": "pcb_trace_error_16",
+    "pcb_trace_error_id": "pcb_trace_error_5",
     "center": {
       "x": -4.68,
       "y": -1.95
     },
     "pcb_component_ids": [],
-    "pcb_port_ids": []
+    "pcb_port_ids": ["pcb_port_1"]
   },
   {
     "type": "pcb_trace_error",
-    "message": "Trace [trace[.JOUT > port.pin2]] has disconnected endpoint at (-4.68, -1.95)",
-    "source_trace_id": "!source_trace_7__source_trace_9_mst1_0",
+    "message": "Trace [trace[.JOUT > port.pin2]] is missing a connection to smtpad[.U1 > .GND]",
+    "source_trace_id": "source_trace_9",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_7__source_trace_9_mst1_0",
-    "pcb_trace_error_id": "pcb_trace_error_17",
+    "pcb_trace_error_id": "pcb_trace_error_6",
     "center": {
       "x": -4.68,
       "y": -1.95
     },
     "pcb_component_ids": [],
-    "pcb_port_ids": []
+    "pcb_port_ids": ["pcb_port_1"]
   },
   {
     "type": "pcb_trace_error",
@@ -3058,7 +2911,7 @@
     "source_trace_id": "source_trace_6",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_6_0",
-    "pcb_trace_error_id": "pcb_trace_error_18",
+    "pcb_trace_error_id": "pcb_trace_error_7",
     "center": {
       "x": -4.68,
       "y": -0.17643701589889926
@@ -3068,35 +2921,35 @@
   },
   {
     "type": "pcb_trace_error",
-    "message": "Trace [trace[.RLED > port.anode]] has disconnected endpoint at (0.82, 2.72)",
-    "source_trace_id": "!source_trace_4__source_trace_8_mst0_0",
+    "message": "Trace [trace[.RLED > port.anode]] is missing a connection to smtpad[.U1 > .VOUT]",
+    "source_trace_id": "source_trace_4",
     "error_type": "pcb_trace_error",
     "pcb_trace_id": "source_trace_4__source_trace_8_mst0_0",
-    "pcb_trace_error_id": "pcb_trace_error_19",
+    "pcb_trace_error_id": "pcb_trace_error_8",
     "center": {
       "x": 0.8200000000000003,
       "y": 2.7199999999999998
     },
     "pcb_component_ids": [],
-    "pcb_port_ids": []
+    "pcb_port_ids": ["pcb_port_2"]
+  },
+  {
+    "type": "pcb_trace_error",
+    "message": "Trace [trace[.RLED > port.anode, .JOUT > port.pin1]] is missing a connection to smtpad[.U1 > .VOUT]",
+    "source_trace_id": "source_trace_4",
+    "error_type": "pcb_trace_error",
+    "pcb_trace_id": "source_trace_4__source_trace_8_mst1_0",
+    "pcb_trace_error_id": "pcb_trace_error_9",
+    "center": {
+      "x": 4.73,
+      "y": -1
+    },
+    "pcb_component_ids": [],
+    "pcb_port_ids": ["pcb_port_2"]
   },
   {
     "type": "pcb_pad_trace_clearance_error",
     "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_0",
-    "error_type": "pcb_pad_trace_clearance_error",
-    "message": "Pad pcb_port[.U1 > .GND] and trace trace[.U1 > port.pin2] are too close (clearance: -0.075mm, minimum: 0.1mm)",
-    "pcb_pad_id": "pcb_smtpad_1",
-    "pcb_trace_id": "source_trace_1__source_trace_3__source_port_1_mst1_0",
-    "minimum_clearance": 0.1,
-    "actual_clearance": -0.075,
-    "center": {
-      "x": -1.3872499999999999,
-      "y": -1.2
-    }
-  },
-  {
-    "type": "pcb_pad_trace_clearance_error",
-    "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_1",
     "error_type": "pcb_pad_trace_clearance_error",
     "message": "Pad pcb_plated_hole[#pcb_plated_hole_1] and trace trace[.CIN > port.pos] are too close (clearance: 0.001mm, minimum: 0.1mm)",
     "pcb_pad_id": "pcb_plated_hole_1",
@@ -3110,35 +2963,7 @@
   },
   {
     "type": "pcb_pad_trace_clearance_error",
-    "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_2",
-    "error_type": "pcb_pad_trace_clearance_error",
-    "message": "Pad pcb_plated_hole[#pcb_plated_hole_1] and trace trace[.JIN > port.pin2] are too close (clearance: -0.075mm, minimum: 0.1mm)",
-    "pcb_pad_id": "pcb_plated_hole_1",
-    "pcb_trace_id": "source_trace_7__source_trace_9_mst0_0",
-    "minimum_clearance": 0.1,
-    "actual_clearance": -0.075,
-    "center": {
-      "x": -4.73,
-      "y": -1.125
-    }
-  },
-  {
-    "type": "pcb_pad_trace_clearance_error",
-    "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_3",
-    "error_type": "pcb_pad_trace_clearance_error",
-    "message": "Pad pcb_plated_hole[#pcb_plated_hole_3] and trace trace[.JOUT > port.pin2] are too close (clearance: -0.075mm, minimum: 0.1mm)",
-    "pcb_pad_id": "pcb_plated_hole_3",
-    "pcb_trace_id": "source_trace_7__source_trace_9_mst1_0",
-    "minimum_clearance": 0.1,
-    "actual_clearance": -0.075,
-    "center": {
-      "x": 6.9525,
-      "y": -1.3175
-    }
-  },
-  {
-    "type": "pcb_pad_trace_clearance_error",
-    "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_4",
+    "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_1",
     "error_type": "pcb_pad_trace_clearance_error",
     "message": "Pad pcb_plated_hole[#pcb_plated_hole_1] and trace trace[.JIN > port.pin1] are too close (clearance: 0mm, minimum: 0.1mm)",
     "pcb_pad_id": "pcb_plated_hole_1",
@@ -3148,20 +2973,6 @@
     "center": {
       "x": -4.765758252147248,
       "y": -0.5591092539747248
-    }
-  },
-  {
-    "type": "pcb_pad_trace_clearance_error",
-    "pcb_pad_trace_clearance_error_id": "pcb_pad_trace_clearance_error_5",
-    "error_type": "pcb_pad_trace_clearance_error",
-    "message": "Pad pcb_port[.RLED > .pin1] and trace trace[.RLED > port.anode] are too close (clearance: -0.075mm, minimum: 0.1mm)",
-    "pcb_pad_id": "pcb_smtpad_7",
-    "pcb_trace_id": "source_trace_4__source_trace_8_mst0_0",
-    "minimum_clearance": 0.1,
-    "actual_clearance": -0.075,
-    "center": {
-      "x": 3.648885855551029,
-      "y": 3.7588858555510285
     }
   },
   {
