@@ -7,18 +7,17 @@ test("repro breakout sot23 regulator overlap connectivity", () => {
   const circuitJson = circuitJsonFixture as AnyCircuitElement[]
   const connMap = getFullConnectivityMapFromCircuitJson(circuitJson)
 
-  // BUG: these one-ended merged branch traces should be connected by the
-  // source_trace ids encoded in connection_name.
+  // Branch traces are connected through their assigned source_trace_id.
   expect(
     connMap.areIdsConnected(
       "source_trace_3__source_trace_5_mst0_0",
       "source_trace_3__source_trace_5_mst1_0",
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     connMap.areIdsConnected(
       "source_trace_3__source_trace_5_mst0_0",
       "source_trace_3",
     ),
-  ).toBe(false)
+  ).toBe(true)
 })
