@@ -1,4 +1,4 @@
-import type { AnyCircuitElement } from "circuit-json"
+import type { AnyCircuitElement, PcbTraceRoutePoint } from "circuit-json"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 import { ConnectivityMap } from "./ConnectivityMap"
 
@@ -34,7 +34,9 @@ export const getFullConnectivityMapFromCircuitJson = (
     } else if (element.type === "pcb_trace") {
       const { pcb_trace_id, source_trace_id } = element
       const route = Array.isArray(element.route)
-        ? element.route.filter((rp) => rp && rp.route_type === "wire")
+        ? element.route.filter(
+            (rp: PcbTraceRoutePoint) => rp && rp.route_type === "wire",
+          )
         : []
       if (source_trace_id && pcb_trace_id) {
         connections.push([pcb_trace_id, source_trace_id])
