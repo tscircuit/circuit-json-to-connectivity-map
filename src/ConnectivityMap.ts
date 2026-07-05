@@ -79,7 +79,9 @@ export class ConnectivityMap {
     if (!netId1) return false
     const netId2 = this.getNetConnectedToId(id2)
     if (!netId2) return false
-    return netId1 === netId2 || netId2 === id1 || netId2 === id1
+    // net ids and element ids are separate sets: a net id is not a substitute
+    // for an element id. To connect a net id, list it as a member of the net.
+    return netId1 === netId2
   }
 
   areAllIdsConnected(ids: string[]): boolean {
