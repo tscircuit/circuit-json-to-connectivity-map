@@ -13,6 +13,14 @@ export class ConnectivityMap {
     }
   }
 
+  private getNextNetId(): string {
+    let counter = 0
+    while (this.netMap[`connectivity_net${counter}`]) {
+      counter++
+    }
+    return `connectivity_net${counter}`
+  }
+
   addConnections(connections: string[][]) {
     for (const connection of connections) {
       const existingNets = new Set<string>()
@@ -29,18 +37,14 @@ export class ConnectivityMap {
 
       if (existingNets.size === 0) {
         // If no existing nets found, create a new one
-        targetNetId = `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = this.getNextNetId()
         this.netMap[targetNetId] = []
       } else if (existingNets.size === 1) {
         // If only one existing net found, use it
-        targetNetId =
-          existingNets.values().next().value ??
-          `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = existingNets.values().next().value ?? this.getNextNetId()
       } else {
         // If multiple nets found, merge them
-        targetNetId =
-          existingNets.values().next().value ??
-          `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = existingNets.values().next().value ?? this.getNextNetId()
         for (const netId of existingNets) {
           if (netId !== targetNetId) {
             this.netMap[targetNetId].push(...this.netMap[netId])
