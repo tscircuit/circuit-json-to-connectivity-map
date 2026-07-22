@@ -99,12 +99,15 @@ export class PcbConnectivityMap {
       const segment1B = trace1.route[i + 1]
       if (segment1A.route_type !== "wire") continue
       if (segment1B.route_type !== "wire") continue
+      if (segment1A.layer !== segment1B.layer) continue
       for (let j = 0; j < trace2.route.length - 1; j++) {
         const segment2A = trace2.route[j]
         const segment2B = trace2.route[j + 1]
 
         if (segment2A.route_type !== "wire") continue
         if (segment2B.route_type !== "wire") continue
+        if (segment2A.layer !== segment2B.layer) continue
+        if (segment1A.layer !== segment2A.layer) continue
 
         // Check if lines are overlapping
         const isOverlapping = doesLineIntersectLine(
