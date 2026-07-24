@@ -1,6 +1,6 @@
+import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import type { AnyCircuitElement, PCBPort, PCBTrace } from "circuit-json"
 import { ConnectivityMap } from "./ConnectivityMap"
-import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 
 /**
@@ -105,6 +105,17 @@ export class PcbConnectivityMap {
 
         if (segment2A.route_type !== "wire") continue
         if (segment2B.route_type !== "wire") continue
+
+        // Traces on different copper layers can cross geometrically without
+        // being electrically connected — only compare same-layer segments
+        // (https://github.com/tscircuit/circuit-json-to-connectivity-map/issues/31)
+        if (
+          segment1A.layer &&
+          segment2A.layer &&
+          segment1A.layer !== segment2A.layer
+        ) {
+          continue
+        }
 
         // Check if lines are overlapping
         const isOverlapping = doesLineIntersectLine(
