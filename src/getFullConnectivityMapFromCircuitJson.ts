@@ -51,10 +51,7 @@ export const getFullConnectivityMapFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_via") {
-      const { pcb_via_id, pcb_trace_id, source_trace_id } =
-        element as typeof element & {
-          source_trace_id?: string
-        }
+      const { pcb_via_id, pcb_trace_id, source_trace_id } = element
       const connectedTraceIds = [pcb_trace_id, source_trace_id].filter(
         (traceId): traceId is string => Boolean(traceId),
       )

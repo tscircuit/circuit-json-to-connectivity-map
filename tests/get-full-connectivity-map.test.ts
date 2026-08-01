@@ -92,7 +92,7 @@ test("should handle internally_connected_source_port_ids in source_component for
 })
 
 test("should connect a pcb via through its source trace", () => {
-  const circuitJson = [
+  const circuitJson: AnyCircuitElement[] = [
     {
       type: "source_trace",
       source_trace_id: "source_trace_1",
@@ -106,7 +106,7 @@ test("should connect a pcb via through its source trace", () => {
       y: 0,
       layers: ["top", "bottom"],
     },
-  ] as AnyCircuitElement[]
+  ]
 
   const result = getFullConnectivityMapFromCircuitJson(circuitJson)
 
