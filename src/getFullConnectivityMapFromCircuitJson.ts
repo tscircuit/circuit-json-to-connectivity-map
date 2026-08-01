@@ -51,9 +51,15 @@ export const getFullConnectivityMapFromCircuitJson = (
         }
       }
     } else if (element.type === "pcb_via") {
-      const { pcb_via_id, pcb_trace_id } = element
-      if (pcb_trace_id && pcb_via_id) {
-        connections.push([pcb_via_id, pcb_trace_id])
+      const { pcb_via_id, pcb_trace_id, source_trace_id } =
+        element as typeof element & {
+          source_trace_id?: string
+        }
+      const connectedTraceIds = [pcb_trace_id, source_trace_id].filter(
+        (traceId): traceId is string => Boolean(traceId),
+      )
+      if (pcb_via_id && connectedTraceIds.length > 0) {
+        connections.push([pcb_via_id, ...connectedTraceIds])
       }
     } else if (element.type === "source_component") {
       if (element.internally_connected_source_port_ids) {
