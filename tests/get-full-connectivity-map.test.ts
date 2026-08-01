@@ -90,3 +90,26 @@ test("should handle internally_connected_source_port_ids in source_component for
   expect(result.areIdsConnected("p2", "p5")).toBe(true)
   expect(result.areIdsConnected("p1", "pcb_p5")).toBe(true)
 })
+
+test("should connect a pcb via through its source trace", () => {
+  const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "source_trace",
+      source_trace_id: "source_trace_1",
+      connected_source_port_ids: ["source_port_1"],
+    },
+    {
+      type: "pcb_via",
+      pcb_via_id: "pcb_via_1",
+      source_trace_id: "source_trace_1",
+      x: 0,
+      y: 0,
+      layers: ["top", "bottom"],
+    },
+  ]
+
+  const result = getFullConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(result.areIdsConnected("pcb_via_1", "source_trace_1")).toBe(true)
+  expect(result.areIdsConnected("pcb_via_1", "source_port_1")).toBe(true)
+})
