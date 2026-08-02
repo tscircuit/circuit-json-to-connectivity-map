@@ -113,3 +113,26 @@ test("should connect a pcb via through its source trace", () => {
   expect(result.areIdsConnected("pcb_via_1", "source_trace_1")).toBe(true)
   expect(result.areIdsConnected("pcb_via_1", "source_port_1")).toBe(true)
 })
+
+test("should connect a pcb via directly to its source net", () => {
+  const circuitJson = [
+    {
+      type: "source_net",
+      source_net_id: "source_net_gnd",
+      name: "GND",
+      member_source_group_ids: [],
+    },
+    {
+      type: "pcb_via",
+      pcb_via_id: "pcb_via_gnd",
+      source_net_id: "source_net_gnd",
+      x: 0,
+      y: 0,
+      layers: ["top", "bottom"],
+    },
+  ] as AnyCircuitElement[]
+
+  const result = getFullConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(result.areIdsConnected("pcb_via_gnd", "source_net_gnd")).toBe(true)
+})
