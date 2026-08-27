@@ -16,10 +16,7 @@ import type {
 } from "circuit-json"
 
 export type PcbPad = PcbSmtPad | PcbPlatedHole
-export type SupportedCopperPour = Extract<
-  PcbCopperPour,
-  { shape: "rect" | "polygon" }
->
+export type SupportedCopperPour = PcbCopperPour
 export type PhysicalCopperTarget = PcbPad | PcbVia | SupportedCopperPour
 
 type WireSegment = {

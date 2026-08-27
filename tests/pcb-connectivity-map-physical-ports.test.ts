@@ -104,6 +104,46 @@ test("uses geometry instead of stale endpoint ids", () => {
   expect(connectivityMap.getAllTracesConnectedToPort("port_0")).toEqual([])
 })
 
+test("connects ports through BREP pours while respecting holes", () => {
+  const connectivityMap = new PcbConnectivityMap([
+    ...makePortAndPad("left", -4),
+    ...makePortAndPad("hole", 0),
+    ...makePortAndPad("right", 4),
+    {
+      type: "pcb_copper_pour",
+      pcb_copper_pour_id: "brep_pour",
+      shape: "brep",
+      layer: "top",
+      covered_with_solder_mask: true,
+      brep_shape: {
+        outer_ring: {
+          vertices: [
+            { x: -5, y: -2 },
+            { x: 5, y: -2 },
+            { x: 5, y: 2 },
+            { x: -5, y: 2 },
+          ],
+        },
+        inner_rings: [
+          {
+            vertices: [
+              { x: 0, y: -1, bulge: 1 },
+              { x: 0, y: 1, bulge: 1 },
+            ],
+          },
+        ],
+      },
+    },
+  ])
+
+  expect(connectivityMap.arePortsConnected("port_left", "port_right")).toBe(
+    true,
+  )
+  expect(connectivityMap.arePortsConnected("port_left", "port_hole")).toBe(
+    false,
+  )
+})
+
 test("connects traces that terminate inside rotated pill pads", () => {
   const connectivityMap = new PcbConnectivityMap([
     {

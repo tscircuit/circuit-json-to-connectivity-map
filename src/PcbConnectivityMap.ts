@@ -53,7 +53,7 @@ export class PcbConnectivityMap {
     )
     this.copperPours = circuitJson.filter(
       (element): element is SupportedCopperPour =>
-        element.type === "pcb_copper_pour" && element.shape !== "brep",
+        element.type === "pcb_copper_pour",
     )
     this._buildTraceMap()
     this._buildPortMap()
