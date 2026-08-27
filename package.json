@@ -38,7 +38,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@tscircuit/circuit-json-util": "git+https://github.com/tscircuit/circuit-json-util#22353409675d8bbcb7505117ad0b1adda6b046cd",
+    "@tscircuit/circuit-json-util": "git+https://github.com/tscircuit/circuit-json-util#96831037279962d0d59685b8341dcc93e0c1469d",
     "@tscircuit/math-utils": "^0.0.9"
   }
 }
