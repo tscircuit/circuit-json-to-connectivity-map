@@ -97,6 +97,7 @@ test("should connect a pcb via through its source trace", () => {
       type: "source_trace",
       source_trace_id: "source_trace_1",
       connected_source_port_ids: ["source_port_1"],
+      connected_source_net_ids: [],
     },
     {
       type: "pcb_via",
@@ -104,6 +105,8 @@ test("should connect a pcb via through its source trace", () => {
       source_trace_id: "source_trace_1",
       x: 0,
       y: 0,
+      hole_diameter: 0.3,
+      outer_diameter: 0.6,
       layers: ["top", "bottom"],
     },
   ]

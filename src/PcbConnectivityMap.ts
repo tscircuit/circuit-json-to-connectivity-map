@@ -1,38 +1,69 @@
-import type { AnyCircuitElement, PCBPort, PCBTrace } from "circuit-json"
-import { ConnectivityMap } from "./ConnectivityMap"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
+import type {
+  AnyCircuitElement,
+  PcbPlatedHole,
+  PcbPort,
+  PcbSmtPad,
+  PcbTrace,
+  PcbVia,
+} from "circuit-json"
+import { ConnectivityMap } from "./ConnectivityMap"
 import { findConnectedNetworks } from "./findConnectedNetworks"
+import {
+  doCopperTargetsTouch,
+  doesPortTouchTrace,
+  doesPortTouchVia,
+  doesTraceTouchCopperTarget,
+  type PcbPad,
+  type SupportedCopperPour,
+} from "./pcbPhysicalContact"
+
+type PcbPortId = PcbPort["pcb_port_id"]
+type PcbTraceId = PcbTrace["pcb_trace_id"]
+
+const getViaNodeId = (via: PcbVia) => `via:${via.pcb_via_id}`
+const getPourNodeId = (pour: SupportedCopperPour) =>
+  `copper_pour:${pour.pcb_copper_pour_id}`
 
 /**
- * A PCB Connectivity Map is a connectivity map that has analyzed what traces and ports are actually connected on the
- * PCB.
- *
- * This is useful for determining how to route a trace on the PCB. For example, you may want to determine where the
- * nearest connected net point is to connect an unrouted pin.
+ * Maps copper that is physically connected on the PCB. Trace endpoint ids are
+ * only used when their referenced port is absent from the Circuit JSON; when a
+ * port exists, geometry is authoritative.
  */
 export class PcbConnectivityMap {
   circuitJson: AnyCircuitElement[]
-  traceIdToElm: Map<string, PCBTrace>
-  portIdToElm: Map<string, PCBPort>
+  traceIdToElm: Map<PcbTraceId, PcbTrace>
+  portIdToElm: Map<PcbPortId, PcbPort>
   connMap: ConnectivityMap
 
-  constructor(circuitJson?: AnyCircuitElement[]) {
-    this.circuitJson = circuitJson || []
+  private readonly pads: PcbPad[]
+  private readonly vias: PcbVia[]
+  private readonly copperPours: SupportedCopperPour[]
+
+  constructor(circuitJson: AnyCircuitElement[] = []) {
+    this.circuitJson = circuitJson
     this.traceIdToElm = new Map()
     this.portIdToElm = new Map()
-    if (circuitJson) {
-      this._buildTraceMap()
-      this._buildPortMap()
-      this.connMap = this._buildTraceConnectivityMap()
-    } else {
-      this.connMap = new ConnectivityMap({})
-    }
+    this.pads = circuitJson.filter(
+      (element): element is PcbSmtPad | PcbPlatedHole =>
+        element.type === "pcb_smtpad" || element.type === "pcb_plated_hole",
+    )
+    this.vias = circuitJson.filter(
+      (element): element is PcbVia => element.type === "pcb_via",
+    )
+    this.copperPours = circuitJson.filter(
+      (element): element is SupportedCopperPour =>
+        element.type === "pcb_copper_pour",
+    )
+    this._buildTraceMap()
+    this._buildPortMap()
+    this.connMap = this._buildTraceConnectivityMap()
   }
 
   private _buildPortMap() {
     for (const element of this.circuitJson) {
       if (element.type === "pcb_port") {
-        this.portIdToElm.set(element.pcb_port_id, element as PCBPort)
+        this.portIdToElm.set(element.pcb_port_id, element)
       }
     }
   }
@@ -40,84 +71,173 @@ export class PcbConnectivityMap {
   private _buildTraceMap() {
     for (const element of this.circuitJson) {
       if (element.type === "pcb_trace") {
-        this.traceIdToElm.set(element.pcb_trace_id, element as PCBTrace)
+        this.traceIdToElm.set(element.pcb_trace_id, element)
       }
     }
   }
 
   private _buildTraceConnectivityMap(): ConnectivityMap {
-    const connections: string[][] = []
     const traceIds = Array.from(this.traceIdToElm.keys())
+    const connections: string[][] = [
+      ...traceIds.map((traceId) => [traceId]),
+      ...Array.from(this.portIdToElm.keys()).map((portId) => [portId]),
+      ...this.vias.map((via) => [getViaNodeId(via)]),
+      ...this.copperPours.map((pour) => [getPourNodeId(pour)]),
+    ]
 
-    for (let i = 0; i < traceIds.length; i++) {
-      for (let j = i + 1; j < traceIds.length; j++) {
-        const trace1 = this.traceIdToElm.get(traceIds[i])!
-        const trace2 = this.traceIdToElm.get(traceIds[j])!
-        if (this._arePcbTracesConnected(trace1, trace2)) {
-          connections.push([traceIds[i], traceIds[j]])
+    for (let firstIndex = 0; firstIndex < traceIds.length; firstIndex++) {
+      const firstTrace = this.traceIdToElm.get(traceIds[firstIndex])
+      if (!firstTrace) continue
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < traceIds.length;
+        secondIndex++
+      ) {
+        const secondTrace = this.traceIdToElm.get(traceIds[secondIndex])
+        if (
+          secondTrace &&
+          this._arePcbTracesConnected(firstTrace, secondTrace)
+        ) {
+          connections.push([firstTrace.pcb_trace_id, secondTrace.pcb_trace_id])
         }
       }
     }
 
-    for (const port of this.portIdToElm.values()) {
-      for (const trace of this.traceIdToElm.values()) {
-        for (const rp of trace.route) {
-          if (rp.route_type === "wire") {
-            if (rp.start_pcb_port_id === port.pcb_port_id) {
-              connections.push([port.pcb_port_id, trace.pcb_trace_id])
-            } else if (rp.end_pcb_port_id === port.pcb_port_id) {
-              connections.push([trace.pcb_trace_id, port.pcb_port_id])
-            }
-          }
-        }
-      }
-    }
+    this._connectPorts(connections)
+    this._connectViasAndPours(connections)
+    this._connectMissingPortReferences(connections)
 
     return new ConnectivityMap(findConnectedNetworks(connections))
   }
 
-  addTrace(trace: PCBTrace) {
-    this.traceIdToElm.set(trace.pcb_trace_id, trace)
-    const connections: string[][] = []
-    for (const rp of trace.route) {
-      if (rp.route_type === "wire") {
-        if (rp.start_pcb_port_id) {
-          connections.push([rp.start_pcb_port_id, trace.pcb_trace_id])
+  private _connectPorts(connections: string[][]) {
+    for (const port of this.portIdToElm.values()) {
+      const portPads = this.pads.filter(
+        (pad) => pad.pcb_port_id === port.pcb_port_id,
+      )
+      for (const trace of this.traceIdToElm.values()) {
+        const touchesPort =
+          portPads.length > 0
+            ? portPads.some((pad) =>
+                doesTraceTouchCopperTarget({ trace, target: pad }),
+              )
+            : doesPortTouchTrace({ port, trace })
+        if (touchesPort) {
+          connections.push([port.pcb_port_id, trace.pcb_trace_id])
         }
-        if (rp.end_pcb_port_id) {
-          connections.push([rp.end_pcb_port_id, trace.pcb_trace_id])
+      }
+      for (const via of this.vias) {
+        if (
+          (portPads.length > 0 &&
+            portPads.some((pad) => doCopperTargetsTouch(pad, via))) ||
+          (portPads.length === 0 && doesPortTouchVia(port, via))
+        ) {
+          connections.push([port.pcb_port_id, getViaNodeId(via)])
+        }
+      }
+      for (const pour of this.copperPours) {
+        if (portPads.some((pad) => doCopperTargetsTouch(pad, pour))) {
+          connections.push([port.pcb_port_id, getPourNodeId(pour)])
+        }
+      }
+    }
+  }
+
+  private _connectViasAndPours(connections: string[][]) {
+    for (const trace of this.traceIdToElm.values()) {
+      for (const via of this.vias) {
+        if (doesTraceTouchCopperTarget({ trace, target: via })) {
+          connections.push([trace.pcb_trace_id, getViaNodeId(via)])
+        }
+      }
+      for (const pour of this.copperPours) {
+        if (doesTraceTouchCopperTarget({ trace, target: pour })) {
+          connections.push([trace.pcb_trace_id, getPourNodeId(pour)])
         }
       }
     }
 
-    this.connMap.addConnections(connections)
+    for (const via of this.vias) {
+      for (const pour of this.copperPours) {
+        if (doCopperTargetsTouch(via, pour)) {
+          connections.push([getViaNodeId(via), getPourNodeId(pour)])
+        }
+      }
+    }
+
+    for (
+      let firstIndex = 0;
+      firstIndex < this.copperPours.length;
+      firstIndex++
+    ) {
+      const firstPour = this.copperPours[firstIndex]
+      if (!firstPour) continue
+      for (
+        let secondIndex = firstIndex + 1;
+        secondIndex < this.copperPours.length;
+        secondIndex++
+      ) {
+        const secondPour = this.copperPours[secondIndex]
+        if (secondPour && doCopperTargetsTouch(firstPour, secondPour)) {
+          connections.push([
+            getPourNodeId(firstPour),
+            getPourNodeId(secondPour),
+          ])
+        }
+      }
+    }
   }
 
-  _arePcbTracesConnected(trace1: PCBTrace, trace2: PCBTrace): boolean {
-    for (let i = 0; i < trace1.route.length - 1; i++) {
-      const segment1A = trace1.route[i]
-      const segment1B = trace1.route[i + 1]
-      if (segment1A.route_type !== "wire") continue
-      if (segment1B.route_type !== "wire") continue
-      if (segment1A.layer !== segment1B.layer) continue
-      for (let j = 0; j < trace2.route.length - 1; j++) {
-        const segment2A = trace2.route[j]
-        const segment2B = trace2.route[j + 1]
+  private _connectMissingPortReferences(connections: string[][]) {
+    for (const trace of this.traceIdToElm.values()) {
+      for (const routePoint of trace.route) {
+        if (routePoint.route_type !== "wire") continue
+        for (const portId of [
+          routePoint.start_pcb_port_id,
+          routePoint.end_pcb_port_id,
+        ]) {
+          if (portId && !this.portIdToElm.has(portId)) {
+            connections.push([trace.pcb_trace_id, portId])
+          }
+        }
+      }
+    }
+  }
 
-        if (segment2A.route_type !== "wire") continue
-        if (segment2B.route_type !== "wire") continue
-        if (segment2A.layer !== segment2B.layer) continue
-        if (segment1A.layer !== segment2A.layer) continue
+  addTrace(trace: PcbTrace) {
+    this.traceIdToElm.set(trace.pcb_trace_id, trace)
+    this.connMap = this._buildTraceConnectivityMap()
+  }
 
-        // Check if lines are overlapping
-        const isOverlapping = doesLineIntersectLine(
-          [segment1A, segment1B],
-          [segment2A, segment2B],
-          {
-            lineThickness: (segment1A.width + segment2A.width) / 2,
-          },
-        )
-        if (isOverlapping) {
+  _arePcbTracesConnected(firstTrace: PcbTrace, secondTrace: PcbTrace): boolean {
+    for (
+      let firstIndex = 0;
+      firstIndex < firstTrace.route.length - 1;
+      firstIndex++
+    ) {
+      const firstStart = firstTrace.route[firstIndex]
+      const firstEnd = firstTrace.route[firstIndex + 1]
+      if (firstStart?.route_type !== "wire") continue
+      if (firstEnd?.route_type !== "wire") continue
+      if (firstStart.layer !== firstEnd.layer) continue
+      for (
+        let secondIndex = 0;
+        secondIndex < secondTrace.route.length - 1;
+        secondIndex++
+      ) {
+        const secondStart = secondTrace.route[secondIndex]
+        const secondEnd = secondTrace.route[secondIndex + 1]
+        if (secondStart?.route_type !== "wire") continue
+        if (secondEnd?.route_type !== "wire") continue
+        if (secondStart.layer !== secondEnd.layer) continue
+        if (firstStart.layer !== secondStart.layer) continue
+        if (
+          doesLineIntersectLine(
+            [firstStart, firstEnd],
+            [secondStart, secondEnd],
+            { lineThickness: (firstStart.width + secondStart.width) / 2 },
+          )
+        ) {
           return true
         }
       }
@@ -125,27 +245,37 @@ export class PcbConnectivityMap {
     return false
   }
 
-  areTracesConnected(traceId1: string, traceId2: string): boolean {
-    return this.connMap.areIdsConnected(traceId1, traceId2)
+  areTracesConnected(firstTraceId: PcbTraceId, secondTraceId: PcbTraceId) {
+    return this.connMap.areIdsConnected(firstTraceId, secondTraceId)
   }
 
-  getAllTracesConnectedToTrace(traceId: string): PCBTrace[] {
+  arePortsConnected(firstPortId: PcbPortId, secondPortId: PcbPortId) {
+    return this.connMap.areIdsConnected(firstPortId, secondPortId)
+  }
+
+  getConnectivityNetIdForPort(portId: PcbPortId) {
+    return this.connMap.getNetConnectedToId(portId)
+  }
+
+  getAllTracesConnectedToTrace(traceId: PcbTraceId): PcbTrace[] {
     const netId = this.connMap.getNetConnectedToId(traceId)
     return netId
       ? this.connMap
           .getIdsConnectedToNet(netId)
           .filter((id) => this.traceIdToElm.has(id))
-          .map((id) => this.traceIdToElm.get(id) as PCBTrace)
+          .map((id) => this.traceIdToElm.get(id))
+          .filter((trace): trace is PcbTrace => trace !== undefined)
       : []
   }
 
-  getAllTracesConnectedToPort(portId: string): PCBTrace[] {
+  getAllTracesConnectedToPort(portId: PcbPortId): PcbTrace[] {
     const netId = this.connMap.getNetConnectedToId(portId)
     return netId
       ? this.connMap
           .getIdsConnectedToNet(netId)
           .filter((id) => this.traceIdToElm.has(id))
-          .map((id) => this.traceIdToElm.get(id) as PCBTrace)
+          .map((id) => this.traceIdToElm.get(id))
+          .filter((trace): trace is PcbTrace => trace !== undefined)
       : []
   }
 }
