@@ -12,7 +12,7 @@
   ],
   "trustedDependencies": ["@tscircuit/circuit-json-util"],
   "scripts": {
-    "build": "tsup-node src/index.ts --format esm --sourcemap --dts",
+    "build": "tsup-node src/index.ts --format esm --sourcemap --dts --dts-resolve",
     "prepare": "bun run build",
     "format:check": "biome format .",
     "format": "biome format --write ."
