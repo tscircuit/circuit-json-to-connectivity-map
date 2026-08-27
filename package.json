@@ -23,7 +23,7 @@
   "trustedDependencies": ["@tscircuit/circuit-json-util"],
   "scripts": {
     "build": "tsup-node src/index.ts src/PcbConnectivityMap.ts --format esm --sourcemap --dts --dts-resolve",
-    "prepare": "tsup-node src/PcbConnectivityMap.ts --format esm --sourcemap --dts",
+    "prepare": "tsup-node src/*.ts --format esm --sourcemap --dts",
     "format:check": "biome format .",
     "format": "biome format --write ."
   },
