@@ -1,3 +1,7 @@
+import {
+  getPcbElementBounds,
+  type PcbBounds,
+} from "@tscircuit/circuit-json-util"
 import { computeGapBetweenCopper } from "@tscircuit/circuit-json-util/compute-gap-between-copper"
 import { pointToSegmentDistance } from "@tscircuit/math-utils"
 import type {
@@ -21,9 +25,34 @@ export type PhysicalCopperTarget = PcbPad | PcbVia | SupportedCopperPour
 type WireSegment = {
   start: PcbTraceRoutePointWire
   end: PcbTraceRoutePointWire
+  trace: PcbTrace
 }
 
 const physicalContactToleranceMm = 1e-9
+const wireSegmentsByTrace = new WeakMap<PcbTrace, WireSegment[]>()
+const boundsByCopper = new WeakMap<object, PcbBounds | null>()
+
+const getCachedBounds = (copper: PhysicalCopperTarget | PcbTrace) => {
+  if (!boundsByCopper.has(copper)) {
+    boundsByCopper.set(copper, getPcbElementBounds(copper))
+  }
+  return boundsByCopper.get(copper) ?? null
+}
+
+const boundsCanTouch = (
+  first: PhysicalCopperTarget | PcbTrace,
+  second: PhysicalCopperTarget | PcbTrace,
+): boolean => {
+  const firstBounds = getCachedBounds(first)
+  const secondBounds = getCachedBounds(second)
+  if (!firstBounds || !secondBounds) return true
+  return (
+    firstBounds.minX <= secondBounds.maxX + physicalContactToleranceMm &&
+    firstBounds.maxX + physicalContactToleranceMm >= secondBounds.minX &&
+    firstBounds.minY <= secondBounds.maxY + physicalContactToleranceMm &&
+    firstBounds.maxY + physicalContactToleranceMm >= secondBounds.minY
+  )
+}
 
 const getLayers = (target: PhysicalCopperTarget): LayerRef[] => {
   if (target.type === "pcb_smtpad") return [target.layer]
@@ -32,22 +61,27 @@ const getLayers = (target: PhysicalCopperTarget): LayerRef[] => {
 }
 
 const getWireSegments = (trace: PcbTrace): WireSegment[] => {
+  const cachedSegments = wireSegmentsByTrace.get(trace)
+  if (cachedSegments) return cachedSegments
   const segments: WireSegment[] = []
   for (let index = 0; index < trace.route.length - 1; index++) {
     const start = trace.route[index]
     const end = trace.route[index + 1]
     if (start?.route_type !== "wire" || end?.route_type !== "wire") continue
     if (start.layer !== end.layer) continue
-    segments.push({ start, end })
+    segments.push({
+      start,
+      end,
+      trace: {
+        type: "pcb_trace",
+        pcb_trace_id: `${trace.pcb_trace_id}:segment:${index}`,
+        route: [start, end],
+      },
+    })
   }
+  wireSegmentsByTrace.set(trace, segments)
   return segments
 }
-
-const getSegmentTrace = ({ start, end }: WireSegment): PcbTrace => ({
-  type: "pcb_trace",
-  pcb_trace_id: "physical_segment",
-  route: [start, end],
-})
 
 export const doesTraceTouchCopperTarget = ({
   trace,
@@ -60,7 +94,8 @@ export const doesTraceTouchCopperTarget = ({
   return getWireSegments(trace).some(
     (segment) =>
       targetLayers.includes(segment.start.layer) &&
-      computeGapBetweenCopper(getSegmentTrace(segment), target) <=
+      boundsCanTouch(segment.trace, target) &&
+      computeGapBetweenCopper(segment.trace, target) <=
         physicalContactToleranceMm,
   )
 }
@@ -84,6 +119,7 @@ export const doCopperTargetsTouch = (
   second: PhysicalCopperTarget,
 ): boolean =>
   getLayers(first).some((layer) => getLayers(second).includes(layer)) &&
+  boundsCanTouch(first, second) &&
   computeGapBetweenCopper(first, second) <= physicalContactToleranceMm
 
 export const doesPortTouchVia = (port: PcbPort, via: PcbVia): boolean =>
