@@ -20,10 +20,8 @@
   "files": [
     "dist"
   ],
-  "trustedDependencies": ["@tscircuit/circuit-json-util"],
   "scripts": {
     "build": "tsup-node src/index.ts src/PcbConnectivityMap.ts --format esm --sourcemap --dts --dts-resolve",
-    "prepare": "tsup-node src/*.ts --format esm --sourcemap --dts",
     "format:check": "biome format .",
     "format": "biome format --write ."
   },
@@ -38,7 +36,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@tscircuit/circuit-json-util": "git+https://github.com/tscircuit/circuit-json-util#0aeb126cab1bfc773724a8e7a6adb323404b4f93",
+    "@tscircuit/circuit-json-util": "https://pkg.pr.new/@tscircuit/circuit-json-util@121",
     "@tscircuit/math-utils": "^0.0.9"
   }
 }
