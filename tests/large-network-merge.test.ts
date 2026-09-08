@@ -14,7 +14,10 @@ for (const count of [4, 180_000]) {
     assert.equal(new Set(merged).size, count + 1)
     assert.equal(map.areAllIdsConnected(["a", "b0", `b${count - 1}`]), true)
     assert.equal(map.getIdsConnectedToNet("second"), merged)
-    map.addConnections([["a", "new"], ["b0", "a"]])
+    map.addConnections([
+      ["a", "new"],
+      ["b0", "a"],
+    ])
     assert.equal(merged.length, count + 2)
     assert.equal(merged[count + 1], "new")
   })
