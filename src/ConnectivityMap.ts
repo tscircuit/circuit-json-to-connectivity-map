@@ -43,7 +43,11 @@ export class ConnectivityMap {
           `connectivity_net${Object.keys(this.netMap).length}`
         for (const netId of existingNets) {
           if (netId !== targetNetId) {
-            this.netMap[targetNetId].push(...this.netMap[netId])
+            const members = this.netMap[netId]
+            const memberCount = members.length
+            for (let i = 0; i < memberCount; i++) {
+              this.netMap[targetNetId].push(members[i])
+            }
 
             // we could delete the net, but setting it to reference the other net
             // will make sure any usage of the old netId will still work
