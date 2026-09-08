@@ -20,7 +20,7 @@ export class ConnectivityMap {
       // Find all existing nets for the connection
       for (const id of connection) {
         const existingNetId = this.idToNetMap[id]
-        if (existingNetId) {
+        if (existingNetId !== undefined) {
           existingNets.add(existingNetId)
         }
       }
@@ -76,9 +76,9 @@ export class ConnectivityMap {
   areIdsConnected(id1: string, id2: string): boolean {
     if (id1 === id2) return true
     const netId1 = this.getNetConnectedToId(id1)
-    if (!netId1) return false
+    if (netId1 === undefined) return false
     const netId2 = this.getNetConnectedToId(id2)
-    if (!netId2) return false
+    if (netId2 === undefined) return false
     return netId1 === netId2 || netId2 === id1 || netId2 === id1
   }
 
