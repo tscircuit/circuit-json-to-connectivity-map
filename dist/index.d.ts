@@ -10,7 +10,6 @@ declare class ConnectivityMap {
     addConnections(connections: string[][]): void;
     getIdsConnectedToNet(netId: string): string[];
     getNetConnectedToId(id: string): string | undefined;
-    private resolveNetId;
     areIdsConnected(id1: string, id2: string): boolean;
     areAllIdsConnected(ids: string[]): boolean;
 }

@@ -95,29 +95,18 @@ var ConnectivityMap = class {
   getNetConnectedToId(id) {
     return this.idToNetMap[id];
   }
-  resolveNetId(id) {
-    const memberNetId = this.getNetConnectedToId(id);
-    if (memberNetId) return memberNetId;
-    const netMembers = this.netMap[id];
-    if (!netMembers) return void 0;
-    for (const memberId of netMembers) {
-      const currentNetId = this.getNetConnectedToId(memberId);
-      if (currentNetId) return currentNetId;
-    }
-    return id;
-  }
   areIdsConnected(id1, id2) {
     if (id1 === id2) return true;
-    const netId1 = this.resolveNetId(id1);
+    const netId1 = resolveNetId(this, id1);
     if (!netId1) return false;
-    const netId2 = this.resolveNetId(id2);
+    const netId2 = resolveNetId(this, id2);
     if (!netId2) return false;
     return netId1 === netId2;
   }
   areAllIdsConnected(ids) {
-    const netId = this.resolveNetId(ids[0]);
+    const netId = resolveNetId(this, ids[0]);
     for (const id of ids) {
-      const nextNetId = this.resolveNetId(id);
+      const nextNetId = resolveNetId(this, id);
       if (nextNetId === void 0) {
         return false;
       }
@@ -127,6 +116,17 @@ var ConnectivityMap = class {
     }
     return true;
   }
+};
+var resolveNetId = (connectivityMap, id) => {
+  const memberNetId = connectivityMap.getNetConnectedToId(id);
+  if (memberNetId) return memberNetId;
+  const netMembers = connectivityMap.netMap[id];
+  if (!netMembers) return void 0;
+  for (const memberId of netMembers) {
+    const currentNetId = connectivityMap.getNetConnectedToId(memberId);
+    if (currentNetId) return currentNetId;
+  }
+  return id;
 };
 
 // src/getSourcePortConnectivityMapFromCircuitJson.ts
