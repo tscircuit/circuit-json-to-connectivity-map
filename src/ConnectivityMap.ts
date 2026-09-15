@@ -73,34 +73,19 @@ export class ConnectivityMap {
     return this.idToNetMap[id]
   }
 
-  private resolveNetId(id: string): string | undefined {
-    const memberNetId = this.getNetConnectedToId(id)
-    if (memberNetId) return memberNetId
-
-    const netMembers = this.netMap[id]
-    if (!netMembers) return undefined
-
-    for (const memberId of netMembers) {
-      const currentNetId = this.getNetConnectedToId(memberId)
-      if (currentNetId) return currentNetId
-    }
-
-    return id
-  }
-
   areIdsConnected(id1: string, id2: string): boolean {
     if (id1 === id2) return true
-    const netId1 = this.resolveNetId(id1)
+    const netId1 = resolveNetId(this, id1)
     if (!netId1) return false
-    const netId2 = this.resolveNetId(id2)
+    const netId2 = resolveNetId(this, id2)
     if (!netId2) return false
     return netId1 === netId2
   }
 
   areAllIdsConnected(ids: string[]): boolean {
-    const netId = this.resolveNetId(ids[0])
+    const netId = resolveNetId(this, ids[0])
     for (const id of ids) {
-      const nextNetId = this.resolveNetId(id)
+      const nextNetId = resolveNetId(this, id)
       if (nextNetId === undefined) {
         return false
       }
@@ -110,4 +95,22 @@ export class ConnectivityMap {
     }
     return true
   }
+}
+
+const resolveNetId = (
+  connectivityMap: ConnectivityMap,
+  id: string,
+): string | undefined => {
+  const memberNetId = connectivityMap.getNetConnectedToId(id)
+  if (memberNetId) return memberNetId
+
+  const netMembers = connectivityMap.netMap[id]
+  if (!netMembers) return undefined
+
+  for (const memberId of netMembers) {
+    const currentNetId = connectivityMap.getNetConnectedToId(memberId)
+    if (currentNetId) return currentNetId
+  }
+
+  return id
 }
