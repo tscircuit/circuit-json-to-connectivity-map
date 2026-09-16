@@ -46,8 +46,11 @@ export const getFullConnectivityMapFromCircuitJson = (
           (rp) => rp?.start_pcb_port_id,
         )?.start_pcb_port_id
         const endId = route.find((rp) => rp?.end_pcb_port_id)?.end_pcb_port_id
-        if (startId && pcb_trace_id && endId) {
-          connections.push([startId, pcb_trace_id, endId])
+        if (startId && pcb_trace_id) {
+          connections.push([startId, pcb_trace_id])
+        }
+        if (pcb_trace_id && endId) {
+          connections.push([pcb_trace_id, endId])
         }
       }
     } else if (element.type === "pcb_via") {
