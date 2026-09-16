@@ -2,7 +2,7 @@ import { expect, test } from "bun:test"
 import type { AnyCircuitElement } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "../src/getFullConnectivityMapFromCircuitJson"
 
-test("reproduces disconnected one-ended T113 fanout traces", () => {
+test("connects one-ended T113 fanout traces to their PCB ports", () => {
   const circuitJson: AnyCircuitElement[] = [
     {
       type: "pcb_port",
@@ -87,8 +87,8 @@ test("reproduces disconnected one-ended T113 fanout traces", () => {
       "breakout:pcb_breakout_point_33_0",
       "pcb_smtpad_64",
     ),
-  ).toBe(false)
+  ).toBe(true)
   expect(
     connMap.areIdsConnected("breakout:pcb_breakout_point_38_0", "pcb_port_79"),
-  ).toBe(false)
+  ).toBe(true)
 })
