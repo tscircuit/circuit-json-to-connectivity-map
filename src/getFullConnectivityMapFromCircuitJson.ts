@@ -57,6 +57,7 @@ export const getFullConnectivityMapFromCircuitJson = (
       const { pcb_via_id, pcb_trace_id, source_trace_id, source_net_id } =
         element
       const connectedIds = [
+        ...(element.pcb_port_ids ?? []),
         pcb_trace_id,
         source_trace_id,
         source_net_id,
