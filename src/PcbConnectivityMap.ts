@@ -109,6 +109,21 @@ export class PcbConnectivityMap {
         if (segment2A.layer !== segment2B.layer) continue
         if (segment1A.layer !== segment2A.layer) continue
 
+        // Board-world millimeters (+X right, +Y up). A conservative bound
+        // rejects distant segments before the unchanged continuous predicate.
+        const radius = (segment1A.width + segment2A.width) / 2
+        if (
+          Math.max(segment1A.x, segment1B.x) + radius <
+            Math.min(segment2A.x, segment2B.x) ||
+          Math.max(segment2A.x, segment2B.x) + radius <
+            Math.min(segment1A.x, segment1B.x) ||
+          Math.max(segment1A.y, segment1B.y) + radius <
+            Math.min(segment2A.y, segment2B.y) ||
+          Math.max(segment2A.y, segment2B.y) + radius <
+            Math.min(segment1A.y, segment1B.y)
+        )
+          continue
+
         // Check if lines are overlapping
         const isOverlapping = doesLineIntersectLine(
           [segment1A, segment1B],
