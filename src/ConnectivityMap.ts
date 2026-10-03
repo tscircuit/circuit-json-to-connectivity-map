@@ -1,3 +1,17 @@
+const getIdsInNet = (
+  netId: string,
+  netMap: Record<string, string[]>,
+  idsByNetArray: Map<string[], Set<string>>,
+) => {
+  const ids = netMap[netId]
+  let idSet = idsByNetArray.get(ids)
+  if (!idSet) {
+    idSet = new Set(ids)
+    idsByNetArray.set(ids, idSet)
+  }
+  return idSet
+}
+
 export class ConnectivityMap {
   netMap: Record<string, string[]>
 
@@ -14,6 +28,9 @@ export class ConnectivityMap {
   }
 
   addConnections(connections: string[][]) {
+    const idsByNetArray = new Map<string[], Set<string>>()
+    let netCount = Object.keys(this.netMap).length
+
     for (const connection of connections) {
       const existingNets = new Set<string>()
 
@@ -29,26 +46,33 @@ export class ConnectivityMap {
 
       if (existingNets.size === 0) {
         // If no existing nets found, create a new one
-        targetNetId = `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = `connectivity_net${netCount++}`
         this.netMap[targetNetId] = []
       } else if (existingNets.size === 1) {
         // If only one existing net found, use it
         targetNetId =
-          existingNets.values().next().value ??
-          `connectivity_net${Object.keys(this.netMap).length}`
+          existingNets.values().next().value ?? `connectivity_net${netCount}`
       } else {
         // If multiple nets found, merge them
         targetNetId =
-          existingNets.values().next().value ??
-          `connectivity_net${Object.keys(this.netMap).length}`
+          existingNets.values().next().value ?? `connectivity_net${netCount}`
+        const targetIds = this.netMap[targetNetId]
+        const idsInTargetNet = getIdsInNet(
+          targetNetId,
+          this.netMap,
+          idsByNetArray,
+        )
         for (const netId of existingNets) {
           if (netId !== targetNetId) {
-            this.netMap[targetNetId].push(...this.netMap[netId])
+            for (const id of this.netMap[netId]) {
+              targetIds.push(id)
+              idsInTargetNet.add(id)
+            }
 
             // we could delete the net, but setting it to reference the other net
             // will make sure any usage of the old netId will still work
-            this.netMap[netId] = this.netMap[targetNetId]
-            for (const id of this.netMap[targetNetId]) {
+            this.netMap[netId] = targetIds
+            for (const id of targetIds) {
               this.idToNetMap[id] = targetNetId
             }
           }
@@ -56,9 +80,16 @@ export class ConnectivityMap {
       }
 
       // Add all ids to the target net
+      const targetIds = this.netMap[targetNetId]
+      const idsInTargetNet = getIdsInNet(
+        targetNetId,
+        this.netMap,
+        idsByNetArray,
+      )
       for (const id of connection) {
-        if (!this.netMap[targetNetId].includes(id)) {
-          this.netMap[targetNetId].push(id)
+        if (!idsInTargetNet.has(id)) {
+          targetIds.push(id)
+          idsInTargetNet.add(id)
         }
         this.idToNetMap[id] = targetNetId
       }

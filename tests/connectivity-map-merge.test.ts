@@ -46,3 +46,32 @@ test("ConnectivityMap.addConnections should merge existing nets correctly", () =
   expect(connectivityMap.areIdsConnected("D", "G")).toBe(false)
   expect(connectivityMap.areIdsConnected("F", "H")).toBe(false)
 })
+
+test("ConnectivityMap.addConnections preserves canonical ids and aliases across batches", () => {
+  const connectivityMap = new ConnectivityMap({})
+
+  connectivityMap.addConnections([
+    ["a", "b"],
+    ["c", "d"],
+    ["b", "c"],
+    ["a", "d", "e"],
+    ["x", "y"],
+  ])
+
+  expect(connectivityMap.netMap).toEqual({
+    connectivity_net0: ["a", "b", "c", "d", "e"],
+    connectivity_net1: ["a", "b", "c", "d", "e"],
+    connectivity_net2: ["x", "y"],
+  })
+  expect(connectivityMap.netMap.connectivity_net0).toBe(
+    connectivityMap.netMap.connectivity_net1,
+  )
+  expect(connectivityMap.getNetConnectedToId("d")).toBe("connectivity_net0")
+
+  connectivityMap.addConnections([["e", "x"]])
+
+  expect(connectivityMap.getNetConnectedToId("y")).toBe("connectivity_net0")
+  expect(connectivityMap.netMap.connectivity_net2).toBe(
+    connectivityMap.netMap.connectivity_net0,
+  )
+})
