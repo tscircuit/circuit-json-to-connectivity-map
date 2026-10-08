@@ -78,3 +78,9 @@ export type PhysicalConnectivitySnapshot = {
   componentByEndpointKey: Record<string, string>
   endpointComponents: string[][]
 }
+
+export type PhysicalConnectivitySplit = {
+  baselineEndpointKeys: string[]
+  baselineEndpointLabels: string[]
+  candidateComponents: string[][]
+}

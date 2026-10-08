@@ -142,9 +142,19 @@ comes from its first route point. Jumper placeholder wires do not become exposed
 copper under the jumper body. Include fixed copper in `traces` as well.
 
 Non-circular oval pads and malformed bridge/via geometry throw an error.
-Callers own validation policy, revision comparison, and rollback. Stable, unique
-`endpointKey` values let a caller detect components that split between snapshots;
-counting connected terminals alone cannot detect a component swap.
+Callers own validation policy and rollback. Compare snapshots using stable,
+unique `endpointKey` values:
+
+```typescript
+import { findSplitPhysicalConnectivityComponents } from "circuit-json-to-connectivity-map"
+
+const splits = findSplitPhysicalConnectivityComponents(before, after)
+```
+
+Each split contains the original terminal keys and labels, plus their groups in
+the candidate. Unchanged components and merges produce no splits. Missing
+candidate terminals are treated as disconnected. Counting connected terminals
+alone cannot detect a component swap.
 
 ## Development
 

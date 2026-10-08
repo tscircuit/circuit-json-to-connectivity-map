@@ -4,6 +4,7 @@ export { getFullConnectivityMapFromCircuitJson } from "./getFullConnectivityMapF
 export { ConnectivityMap } from "./ConnectivityMap"
 export { PcbConnectivityMap } from "./PcbConnectivityMap"
 export { capturePhysicalConnectivity } from "./capturePhysicalConnectivity"
+export { findSplitPhysicalConnectivityComponents } from "./findSplitPhysicalConnectivityComponents"
 export type {
   PhysicalConnectivityPoint,
   PhysicalConnectivityWire,
@@ -14,4 +15,5 @@ export type {
   PhysicalConnectivityEndpoint,
   PhysicalConnectivityInput,
   PhysicalConnectivitySnapshot,
+  PhysicalConnectivitySplit,
 } from "./physical-connectivity-types"
