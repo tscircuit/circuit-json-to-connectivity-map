@@ -105,6 +105,47 @@ A class representing the connectivity map with methods:
 - `getIdsConnectedToNet(netId: string): string[]`
 - `getNetConnectedToId(id: string): string | undefined`
 
+## Capturing physical terminal connectivity
+
+`capturePhysicalConnectivity` computes terminal components from actual copper
+geometry. Supply already resolved net names; the function does not infer nets
+from identifiers, aliases, or source connections. It also does not check shorts
+between different nets.
+
+```typescript
+import { capturePhysicalConnectivity } from "circuit-json-to-connectivity-map"
+
+const snapshot = capturePhysicalConnectivity({
+  layerCount: 2,
+  defaultViaDiameter: 0.6,
+  endpoints: [
+    { endpointKey: "A", point: { x: 0, y: 0 }, layers: ["top"], netName: "POWER" },
+    { endpointKey: "B", point: { x: 2, y: 0 }, layers: ["top"], netName: "POWER" },
+  ],
+  obstacles: [],
+  traces: [{
+    pcb_trace_id: "route",
+    netName: "POWER",
+    route: [
+      { route_type: "wire", x: 0, y: 0, width: 0.2, layer: "top" },
+      { route_type: "wire", x: 2, y: 0, width: 0.2, layer: "top" },
+    ],
+  }],
+})
+// snapshot.endpointComponents === [["A", "B"]]
+```
+
+Supported geometry includes rotated rectangular pads, circular pads, wire
+segments, vias across their layer span, 0603/1206/1206x4_pair jumper pads, and
+through-obstacle markers with a same-net multilayer copper witness. Segment width
+comes from its first route point. Jumper placeholder wires do not become exposed
+copper under the jumper body. Include fixed copper in `traces` as well.
+
+Non-circular oval pads and malformed bridge/via geometry throw an error.
+Callers own validation policy, revision comparison, and rollback. Stable, unique
+`endpointKey` values let a caller detect components that split between snapshots;
+counting connected terminals alone cannot detect a component swap.
+
 ## Development
 
 This project uses [Bun](https://bun.sh) as its JavaScript runtime.
