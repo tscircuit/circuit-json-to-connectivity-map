@@ -1,3 +1,15 @@
+import {
+  distance,
+  pointToSegmentDistance,
+  segmentToSegmentMinDistance,
+  segmentToCircleMinDistance,
+  segmentToBoxMinDistance,
+  pointToBoxDistance,
+  getBoundsFromPoints,
+  getBoundingBox,
+  doBoundsOverlap,
+  type Bounds,
+} from "@tscircuit/math-utils"
 import Flatbush from "flatbush"
 import type {
   PhysicalConnectivityInput,
@@ -11,132 +23,15 @@ import type {
 
 const GEOMETRY_EPSILON_MM = 1e-6
 
-type Bounds = {
-  minX: number
-  minY: number
-  maxX: number
-  maxY: number
-}
-
-type EndpointPrimitive = {
-  kind: "endpoint"
-  endpointKey: string
-  endpointLabel: string
-  point: Point
+type CopperPrimitive = (
+  | { kind: "circle"; center: Point; diameter: number }
+  | { kind: "obstacle"; obstacle: Obstacle }
+  | { kind: "segment"; start: Point; end: Point; width: number }
+) & {
   layers: string[]
   bounds: Bounds
-}
-
-type ObstaclePrimitive = {
-  kind: "obstacle"
-  obstacle: Obstacle
-  layers: string[]
-  bounds: Bounds
-}
-
-type SegmentPrimitive = {
-  kind: "segment"
-  start: Point
-  end: Point
-  width: number
-  layers: string[]
-  bounds: Bounds
-}
-
-type ViaPrimitive = {
-  kind: "via"
-  center: Point
-  diameter: number
-  layers: string[]
-  bounds: Bounds
-}
-
-type BridgeContactPrimitive = {
-  kind: "bridge-contact"
-  center: Point
-  diameter: number
-  layers: string[]
-  bridgeId: string
-  bounds: Bounds
-}
-
-type BridgePadPrimitive = {
-  kind: "bridge-pad"
-  obstacle: Obstacle
-  layers: string[]
-  bridgeId: string
-  bounds: Bounds
-}
-
-type CopperPrimitive =
-  | EndpointPrimitive
-  | ObstaclePrimitive
-  | SegmentPrimitive
-  | ViaPrimitive
-  | BridgeContactPrimitive
-  | BridgePadPrimitive
-
-const distance = (first: Point, second: Point) =>
-  Math.hypot(first.x - second.x, first.y - second.y)
-
-const distancePointToSegment = (point: Point, start: Point, end: Point) => {
-  const dx = end.x - start.x
-  const dy = end.y - start.y
-  const lengthSquared = dx * dx + dy * dy
-  const position =
-    lengthSquared <= GEOMETRY_EPSILON_MM * GEOMETRY_EPSILON_MM
-      ? 0
-      : Math.max(
-          0,
-          Math.min(
-            1,
-            ((point.x - start.x) * dx + (point.y - start.y) * dy) /
-              lengthSquared,
-          ),
-        )
-  return Math.hypot(
-    point.x - (start.x + position * dx),
-    point.y - (start.y + position * dy),
-  )
-}
-
-const crossProduct = (origin: Point, first: Point, second: Point) =>
-  (first.x - origin.x) * (second.y - origin.y) -
-  (first.y - origin.y) * (second.x - origin.x)
-
-const segmentsProperlyCross = (
-  firstStart: Point,
-  firstEnd: Point,
-  secondStart: Point,
-  secondEnd: Point,
-) => {
-  const firstDirection = crossProduct(secondStart, secondEnd, firstStart)
-  const secondDirection = crossProduct(secondStart, secondEnd, firstEnd)
-  const thirdDirection = crossProduct(firstStart, firstEnd, secondStart)
-  const fourthDirection = crossProduct(firstStart, firstEnd, secondEnd)
-  return (
-    ((firstDirection > 0 && secondDirection < 0) ||
-      (firstDirection < 0 && secondDirection > 0)) &&
-    ((thirdDirection > 0 && fourthDirection < 0) ||
-      (thirdDirection < 0 && fourthDirection > 0))
-  )
-}
-
-const distanceSegmentToSegment = (
-  firstStart: Point,
-  firstEnd: Point,
-  secondStart: Point,
-  secondEnd: Point,
-) => {
-  if (segmentsProperlyCross(firstStart, firstEnd, secondStart, secondEnd)) {
-    return 0
-  }
-  return Math.min(
-    distancePointToSegment(firstStart, secondStart, secondEnd),
-    distancePointToSegment(firstEnd, secondStart, secondEnd),
-    distancePointToSegment(secondStart, firstStart, firstEnd),
-    distancePointToSegment(secondEnd, firstStart, firstEnd),
-  )
+  endpointKey?: string
+  bridgeId?: string
 }
 
 const getObstaclePolygon = (obstacle: Obstacle): Point[] => {
@@ -156,8 +51,7 @@ const getObstaclePolygon = (obstacle: Obstacle): Point[] => {
 
 const obstacleIsCircular = (obstacle: Obstacle) => {
   const hasCircularShape =
-    obstacle.type === "oval" ||
-    (obstacle as Obstacle & { shape?: string }).shape === "circle"
+    obstacle.type === "oval" || obstacle.shape === "circle"
   if (!hasCircularShape) return false
   if (Math.abs(obstacle.width - obstacle.height) > GEOMETRY_EPSILON_MM) {
     throw new Error(
@@ -167,131 +61,69 @@ const obstacleIsCircular = (obstacle: Obstacle) => {
   return true
 }
 
-const pointIsInsidePolygon = (point: Point, polygon: Point[]) => {
-  for (let index = 0; index < polygon.length; index++) {
-    if (
-      distancePointToSegment(
-        point,
-        polygon[index]!,
-        polygon[(index + 1) % polygon.length]!,
-      ) <= GEOMETRY_EPSILON_MM
-    ) {
-      return true
-    }
+// math-utils box helpers use axis-aligned boxes. Rotate into the pad's frame.
+const toObstacleFrame = (point: Point, obstacle: Obstacle): Point => {
+  const angle = ((obstacle.ccwRotationDegrees ?? 0) * Math.PI) / 180
+  const dx = point.x - obstacle.center.x
+  const dy = point.y - obstacle.center.y
+  return {
+    x: dx * Math.cos(angle) + dy * Math.sin(angle),
+    y: -dx * Math.sin(angle) + dy * Math.cos(angle),
   }
-
-  let inside = false
-  for (
-    let currentIndex = 0, previousIndex = polygon.length - 1;
-    currentIndex < polygon.length;
-    previousIndex = currentIndex++
-  ) {
-    const current = polygon[currentIndex]!
-    const previous = polygon[previousIndex]!
-    const crossesRay =
-      current.y > point.y !== previous.y > point.y &&
-      point.x <
-        ((previous.x - current.x) * (point.y - current.y)) /
-          (previous.y - current.y) +
-          current.x
-    if (crossesRay) inside = !inside
-  }
-  return inside
 }
 
-const distancePointToObstacle = (point: Point, obstacle: Obstacle) => {
-  if (obstacleIsCircular(obstacle)) {
-    return Math.max(0, distance(point, obstacle.center) - obstacle.width / 2)
-  }
-  const polygon = getObstaclePolygon(obstacle)
-  if (pointIsInsidePolygon(point, polygon)) return 0
-  return Math.min(
-    ...polygon.map((corner, index) =>
-      distancePointToSegment(
-        point,
-        corner,
-        polygon[(index + 1) % polygon.length]!,
-      ),
-    ),
-  )
-}
+const distancePointToObstacle = (point: Point, obstacle: Obstacle): number =>
+  obstacleIsCircular(obstacle)
+    ? Math.max(0, distance(point, obstacle.center) - obstacle.width / 2)
+    : pointToBoxDistance(toObstacleFrame(point, obstacle), {
+        center: { x: 0, y: 0 },
+        width: obstacle.width,
+        height: obstacle.height,
+      })
 
 const distanceSegmentToObstacle = (
   start: Point,
   end: Point,
   obstacle: Obstacle,
-) => {
-  if (obstacleIsCircular(obstacle)) {
-    return Math.max(
-      0,
-      distancePointToSegment(obstacle.center, start, end) - obstacle.width / 2,
-    )
-  }
-  const polygon = getObstaclePolygon(obstacle)
-  if (
-    pointIsInsidePolygon(start, polygon) ||
-    pointIsInsidePolygon(end, polygon)
-  ) {
-    return 0
-  }
-  return Math.min(
-    ...polygon.map((corner, index) =>
-      distanceSegmentToSegment(
-        start,
-        end,
-        corner,
-        polygon[(index + 1) % polygon.length]!,
-      ),
-    ),
-  )
-}
-
-const distanceObstacleToObstacle = (first: Obstacle, second: Obstacle) => {
-  if (obstacleIsCircular(first)) {
-    if (obstacleIsCircular(second)) {
-      return Math.max(
-        0,
-        distance(first.center, second.center) -
-          first.width / 2 -
-          second.width / 2,
+): number =>
+  obstacleIsCircular(obstacle)
+    ? segmentToCircleMinDistance(start, end, {
+        ...obstacle.center,
+        radius: obstacle.width / 2,
+      })
+    : segmentToBoxMinDistance(
+        toObstacleFrame(start, obstacle),
+        toObstacleFrame(end, obstacle),
+        {
+          center: { x: 0, y: 0 },
+          width: obstacle.width,
+          height: obstacle.height,
+        },
       )
-    }
+
+const distanceObstacleToObstacle = (
+  first: Obstacle,
+  second: Obstacle,
+): number => {
+  if (obstacleIsCircular(first))
     return Math.max(
       0,
       distancePointToObstacle(first.center, second) - first.width / 2,
     )
-  }
-  if (obstacleIsCircular(second)) {
+  if (obstacleIsCircular(second))
     return distanceObstacleToObstacle(second, first)
-  }
-
-  const firstPolygon = getObstaclePolygon(first)
-  const secondPolygon = getObstaclePolygon(second)
-  if (
-    pointIsInsidePolygon(firstPolygon[0]!, secondPolygon) ||
-    pointIsInsidePolygon(secondPolygon[0]!, firstPolygon)
-  ) {
-    return 0
-  }
-  let minimumDistance = Number.POSITIVE_INFINITY
-  for (let firstIndex = 0; firstIndex < firstPolygon.length; firstIndex++) {
-    for (
-      let secondIndex = 0;
-      secondIndex < secondPolygon.length;
-      secondIndex++
-    ) {
-      minimumDistance = Math.min(
-        minimumDistance,
-        distanceSegmentToSegment(
-          firstPolygon[firstIndex]!,
-          firstPolygon[(firstIndex + 1) % firstPolygon.length]!,
-          secondPolygon[secondIndex]!,
-          secondPolygon[(secondIndex + 1) % secondPolygon.length]!,
-        ),
-      )
-    }
-  }
-  return minimumDistance
+  // Containment has no edge intersection. Otherwise the minimum is on an edge.
+  if (distancePointToObstacle(second.center, first) === 0) return 0
+  const corners = getObstaclePolygon(first)
+  return Math.min(
+    ...corners.map((corner, index) =>
+      distanceSegmentToObstacle(
+        corner,
+        corners[(index + 1) % corners.length]!,
+        second,
+      ),
+    ),
+  )
 }
 
 const expandBounds = (bounds: Bounds, amount: number): Bounds => ({
@@ -301,106 +133,48 @@ const expandBounds = (bounds: Bounds, amount: number): Bounds => ({
   maxY: bounds.maxY + amount,
 })
 
-const getPointBounds = (point: Point): Bounds => ({
-  minX: point.x,
-  minY: point.y,
-  maxX: point.x,
-  maxY: point.y,
-})
+const getPointBounds = (point: Point): Bounds =>
+  getBoundingBox({ center: point, width: 0, height: 0 })
 
-const getObstacleBounds = (obstacle: Obstacle): Bounds => {
-  if (obstacleIsCircular(obstacle)) {
-    return expandBounds(getPointBounds(obstacle.center), obstacle.width / 2)
-  }
-  const polygon = getObstaclePolygon(obstacle)
-  return {
-    minX: Math.min(...polygon.map((point) => point.x)),
-    minY: Math.min(...polygon.map((point) => point.y)),
-    maxX: Math.max(...polygon.map((point) => point.x)),
-    maxY: Math.max(...polygon.map((point) => point.y)),
-  }
-}
+const getObstacleBounds = (obstacle: Obstacle): Bounds =>
+  obstacleIsCircular(obstacle)
+    ? getBoundingBox(obstacle)
+    : getBoundsFromPoints(getObstaclePolygon(obstacle))! // Four rectangle corners.
 
-const boundsTouch = (first: Bounds, second: Bounds) =>
-  first.maxX + GEOMETRY_EPSILON_MM >= second.minX &&
-  second.maxX + GEOMETRY_EPSILON_MM >= first.minX &&
-  first.maxY + GEOMETRY_EPSILON_MM >= second.minY &&
-  second.maxY + GEOMETRY_EPSILON_MM >= first.minY
-
-const shareLayer = (first: CopperPrimitive, second: CopperPrimitive) =>
-  first.layers.some((layer) => second.layers.includes(layer))
-
-const primitivesTouch = (first: CopperPrimitive, second: CopperPrimitive) => {
-  if (!shareLayer(first, second) || !boundsTouch(first.bounds, second.bounds)) {
-    return false
-  }
-
-  if (first.kind === "bridge-pad") {
-    const obstaclePrimitive: ObstaclePrimitive = {
-      kind: "obstacle",
-      obstacle: first.obstacle,
-      layers: first.layers,
-      bounds: first.bounds,
-    }
-    if (second.kind === "bridge-pad") {
-      return primitivesTouch(obstaclePrimitive, {
-        kind: "obstacle",
-        obstacle: second.obstacle,
-        layers: second.layers,
-        bounds: second.bounds,
-      })
-    }
-    return primitivesTouch(obstaclePrimitive, second)
-  }
-  if (second.kind === "bridge-pad") return primitivesTouch(second, first)
-
-  if (first.kind === "endpoint") {
-    if (second.kind === "endpoint") {
-      return distance(first.point, second.point) <= GEOMETRY_EPSILON_MM
-    }
-    if (second.kind === "obstacle") {
-      return (
-        distancePointToObstacle(first.point, second.obstacle) <=
-        GEOMETRY_EPSILON_MM
-      )
-    }
-    if (second.kind === "segment") {
-      return (
-        distancePointToSegment(first.point, second.start, second.end) <=
-        second.width / 2 + GEOMETRY_EPSILON_MM
-      )
-    }
-    return (
-      distance(first.point, second.center) <=
-      second.diameter / 2 + GEOMETRY_EPSILON_MM
+const primitivesTouch = (
+  first: CopperPrimitive,
+  second: CopperPrimitive,
+): boolean => {
+  if (
+    !first.layers.some((layer) => second.layers.includes(layer)) ||
+    !doBoundsOverlap(
+      expandBounds(first.bounds, GEOMETRY_EPSILON_MM),
+      second.bounds,
     )
-  }
-  if (second.kind === "endpoint") return primitivesTouch(second, first)
+  )
+    return false
 
   if (first.kind === "obstacle") {
-    if (second.kind === "obstacle") {
+    if (second.kind === "obstacle")
       return (
         distanceObstacleToObstacle(first.obstacle, second.obstacle) <=
         GEOMETRY_EPSILON_MM
       )
-    }
-    if (second.kind === "segment") {
+    if (second.kind === "segment")
       return (
         distanceSegmentToObstacle(second.start, second.end, first.obstacle) <=
         second.width / 2 + GEOMETRY_EPSILON_MM
       )
-    }
     return (
       distancePointToObstacle(second.center, first.obstacle) <=
       second.diameter / 2 + GEOMETRY_EPSILON_MM
     )
   }
   if (second.kind === "obstacle") return primitivesTouch(second, first)
-
   if (first.kind === "segment") {
-    if (second.kind === "segment") {
+    if (second.kind === "segment")
       return (
-        distanceSegmentToSegment(
+        segmentToSegmentMinDistance(
           first.start,
           first.end,
           second.start,
@@ -408,14 +182,12 @@ const primitivesTouch = (first: CopperPrimitive, second: CopperPrimitive) => {
         ) <=
         (first.width + second.width) / 2 + GEOMETRY_EPSILON_MM
       )
-    }
     return (
-      distancePointToSegment(second.center, first.start, first.end) <=
-      first.width / 2 + second.diameter / 2 + GEOMETRY_EPSILON_MM
+      pointToSegmentDistance(second.center, first.start, first.end) <=
+      (first.width + second.diameter) / 2 + GEOMETRY_EPSILON_MM
     )
   }
   if (second.kind === "segment") return primitivesTouch(second, first)
-
   return (
     distance(first.center, second.center) <=
     (first.diameter + second.diameter) / 2 + GEOMETRY_EPSILON_MM
@@ -474,8 +246,8 @@ const createBridgeContact = (
   diameter: number,
   layers: string[],
   bridgeId: string,
-): BridgeContactPrimitive => ({
-  kind: "bridge-contact",
+): CopperPrimitive => ({
+  kind: "circle",
   center: { x: point.x, y: point.y },
   diameter,
   layers,
@@ -519,7 +291,7 @@ const createJumperPad = (
   jumper: JumperRoutePoint,
   center: Point,
   bridgeId: string,
-): BridgePadPrimitive => {
+): CopperPrimitive => {
   if (!jumper.layer) throw new Error(`Jumper ${bridgeId} is missing its layer`)
   const dimensions = JUMPER_PAD_DIMENSIONS[jumper.footprint]
   if (!dimensions) {
@@ -555,7 +327,7 @@ const createJumperPad = (
     layers: [jumper.layer],
   }
   return {
-    kind: "bridge-pad",
+    kind: "obstacle",
     obstacle,
     layers: obstacle.layers,
     bridgeId,
@@ -584,15 +356,8 @@ const extractTraceCopper = (
   boardLayers: string[],
   defaultViaDiameter: number,
   sameNetObstacles: Obstacle[],
-): Array<
-  SegmentPrimitive | ViaPrimitive | BridgeContactPrimitive | BridgePadPrimitive
-> => {
-  const primitives: Array<
-    | SegmentPrimitive
-    | ViaPrimitive
-    | BridgeContactPrimitive
-    | BridgePadPrimitive
-  > = []
+): CopperPrimitive[] => {
+  const primitives: CopperPrimitive[] = []
   const jumpers = trace.route.flatMap((routePoint, routePointIndex) =>
     routePoint.route_type === "jumper" ? [{ routePoint, routePointIndex }] : [],
   )
@@ -681,7 +446,7 @@ const extractTraceCopper = (
       }
       const diameter = routePoint.via_diameter ?? defaultViaDiameter
       primitives.push({
-        kind: "via",
+        kind: "circle",
         center: { x: routePoint.x, y: routePoint.y },
         diameter,
         layers: getViaLayers(routePoint, boardLayers),
@@ -760,17 +525,17 @@ export const capturePhysicalConnectivity = (
     const endpointLabel = endpoint.endpointLabel ?? endpoint.endpointKey
     endpointLabels[endpoint.endpointKey] = endpointLabel
     addPrimitive(endpoint.netName, {
-      kind: "endpoint",
+      kind: "circle",
       endpointKey: endpoint.endpointKey,
-      endpointLabel,
-      point: { ...endpoint.point },
+      center: { ...endpoint.point },
+      diameter: 0,
       layers: endpoint.layers,
       bounds: getPointBounds(endpoint.point),
     })
   }
 
   for (const obstacle of input.obstacles) {
-    const primitive: ObstaclePrimitive = {
+    const primitive: CopperPrimitive = {
       kind: "obstacle",
       obstacle,
       layers: obstacle.layers,
@@ -803,12 +568,7 @@ export const capturePhysicalConnectivity = (
     const firstContactByBridgeId = new Map<string, number>()
     for (let index = 0; index < primitives.length; index++) {
       const primitive = primitives[index]!
-      if (
-        primitive.kind !== "bridge-contact" &&
-        primitive.kind !== "bridge-pad"
-      ) {
-        continue
-      }
+      if (primitive.bridgeId === undefined) continue
       const firstIndex = firstContactByBridgeId.get(primitive.bridgeId)
       if (firstIndex === undefined) {
         firstContactByBridgeId.set(primitive.bridgeId, index)
@@ -850,7 +610,7 @@ export const capturePhysicalConnectivity = (
     const endpointsByRoot = new Map<number, string[]>()
     for (let index = 0; index < primitives.length; index++) {
       const primitive = primitives[index]!
-      if (primitive.kind !== "endpoint") continue
+      if (primitive.endpointKey === undefined) continue
       const root = connectedCopper.find(index)
       const endpointKeys = endpointsByRoot.get(root) ?? []
       endpointKeys.push(primitive.endpointKey)

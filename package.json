@@ -25,7 +25,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@tscircuit/math-utils": "^0.0.9",
+    "@tscircuit/math-utils": "^0.0.38",
     "flatbush": "^4.6.2"
   }
 }

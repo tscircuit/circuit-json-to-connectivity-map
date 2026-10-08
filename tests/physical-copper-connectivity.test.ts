@@ -152,6 +152,68 @@ test("rotated rectangular pads use their copper outline", () => {
   ])
 })
 
+test("rotated pad contacts include containment and exclude separated copper", () => {
+  const input = problem([
+    [0, 0],
+    [1, 1],
+  ])
+  const pad = (x: number, y: number, width = 2, height = 0.2) => ({
+    type: "rect" as const,
+    center: { x, y },
+    width,
+    height,
+    ccwRotationDegrees: 45,
+    layers: ["top"],
+    netNames: ["NET"],
+  })
+  input.obstacles = [pad(0, 0), pad(1, 1)]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+  ])
+  input.obstacles[1] = pad(1.5, 1.5)
+  input.endpoints[1].point = { x: 1.5, y: 1.5 }
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0"],
+    ["terminal-1"],
+  ])
+  input.obstacles[1] = pad(0.5, 0.5, 0.1, 0.1)
+  input.endpoints[1].point = { x: 0.5, y: 0.5 }
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+  ])
+})
+
+test("pad tangency preserves the 1e-6 mm copper-contact tolerance", () => {
+  const input = problem([
+    [0, 0],
+    [1.1 + 0.5e-6, 0],
+  ])
+  input.obstacles = [
+    {
+      type: "oval",
+      center: { x: 0, y: 0 },
+      width: 2,
+      height: 2,
+      layers: ["top"],
+      netNames: ["NET"],
+    },
+  ]
+  input.traces = [
+    trace("tangent", [wire(1.1 + 0.5e-6, 0, 0.2), wire(2, 0, 0.2)]),
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+  ])
+  input.traces = [
+    trace("separated", [wire(1.1 + 2e-6, 0, 0.2), wire(2, 0, 0.2)]),
+  ]
+  input.endpoints[1].point.x = 1.1 + 2e-6
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0"],
+    ["terminal-1"],
+  ])
+})
+
 test("vias connect their full layer span but crossing traces on separate layers do not", () => {
   const input = problem([
     [-1, 0],
