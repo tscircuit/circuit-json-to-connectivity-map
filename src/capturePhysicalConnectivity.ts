@@ -138,7 +138,11 @@ const getPointBounds = (point: Point): Bounds =>
 
 const getObstacleBounds = (obstacle: Obstacle): Bounds =>
   obstacleIsCircular(obstacle)
-    ? getBoundingBox(obstacle)
+    ? getBoundingBox({
+        center: obstacle.center,
+        width: obstacle.width,
+        height: obstacle.width,
+      })
     : getBoundsFromPoints(getObstaclePolygon(obstacle))! // Four rectangle corners.
 
 const primitivesTouch = (

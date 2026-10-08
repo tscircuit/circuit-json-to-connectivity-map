@@ -214,6 +214,26 @@ test("pad tangency preserves the 1e-6 mm copper-contact tolerance", () => {
   ])
 })
 
+test("near-equal circular dimensions retain the diameter-based contact bounds", () => {
+  const input = problem([
+    [0, 0],
+    [0, 1 + 0.9e-6],
+  ])
+  input.obstacles = [
+    {
+      type: "oval",
+      center: { x: 0, y: 0 },
+      width: 2,
+      height: 2 - 0.5e-6,
+      layers: ["top"],
+      netNames: ["NET"],
+    },
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+  ])
+})
+
 test("vias connect their full layer span but crossing traces on separate layers do not", () => {
   const input = problem([
     [-1, 0],
