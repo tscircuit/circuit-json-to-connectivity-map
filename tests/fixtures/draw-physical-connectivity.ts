@@ -1,6 +1,6 @@
+import type { Point } from "@tscircuit/math-utils"
 import type {
   PhysicalConnectivityInput,
-  PhysicalConnectivityPoint,
   PhysicalConnectivitySnapshot,
 } from "../../src"
 
@@ -32,10 +32,10 @@ export function drawPhysicalConnectivity({
   title: string
   note: string
   scale: number
-  center: PhysicalConnectivityPoint
+  center: Point
   labelOffsets?: Record<string, [number, number]>
 }): string {
-  const xy = (point: PhysicalConnectivityPoint) => ({
+  const xy = (point: Point) => ({
     x: 260 + (point.x - center.x) * scale,
     y: 245 - (point.y - center.y) * scale,
   })
@@ -43,7 +43,7 @@ export function drawPhysicalConnectivity({
     colors[
       snapshot.endpointComponents.findIndex((group) => group.includes(key))
     ]
-  const colorAt = (point: PhysicalConnectivityPoint) => {
+  const colorAt = (point: Point) => {
     const endpoint = input.endpoints.find(
       (endpoint) =>
         endpoint.point.x === point.x && endpoint.point.y === point.y,

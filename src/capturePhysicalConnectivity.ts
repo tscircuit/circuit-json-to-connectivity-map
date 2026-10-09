@@ -9,13 +9,13 @@ import {
   getBoundingBox,
   doBoundsOverlap,
   type Bounds,
+  type Point,
 } from "@tscircuit/math-utils"
 import Flatbush from "flatbush"
 import type {
   PhysicalConnectivityInput,
   PhysicalConnectivitySnapshot,
-  PhysicalConnectivityObstacleShape as Obstacle,
-  PhysicalConnectivityPoint as Point,
+  PhysicalConnectivityObstacle as Obstacle,
   PhysicalConnectivityTrace,
   PhysicalConnectivityVia as ViaRoutePoint,
   PhysicalConnectivityWire as WireRoutePoint,

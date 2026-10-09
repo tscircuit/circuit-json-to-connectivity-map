@@ -1,13 +1,19 @@
-export type PhysicalConnectivityPoint = { x: number; y: number }
+import type { Box, Point } from "@tscircuit/math-utils"
+import type {
+  PcbTraceRoutePointVia,
+  PcbTraceRoutePointWire,
+} from "circuit-json"
 
-export type PhysicalConnectivityWire = PhysicalConnectivityPoint & {
-  route_type: "wire"
-  width: number
-  layer: string
-}
+/** Normalized constant-width copper; layer names come from the caller. */
+export type PhysicalConnectivityWire = Pick<
+  PcbTraceRoutePointWire,
+  "route_type" | "x" | "y" | "width"
+> & { layer: string }
 
-export type PhysicalConnectivityVia = PhysicalConnectivityPoint & {
-  route_type: "via"
+export type PhysicalConnectivityVia = Pick<
+  PcbTraceRoutePointVia,
+  "route_type" | "x" | "y"
+> & {
   from_layer: string
   to_layer: string
   via_diameter?: number
@@ -24,16 +30,16 @@ export type PhysicalConnectivityTrace = {
     | PhysicalConnectivityVia
     | {
         route_type: "jumper"
-        start: PhysicalConnectivityPoint
-        end: PhysicalConnectivityPoint
+        start: Point
+        end: Point
         /** Descriptive metadata only; pad geometry comes from obstacles. */
         footprint?: string
         layer: string
       }
     | {
         route_type: "through_obstacle"
-        start: PhysicalConnectivityPoint
-        end: PhysicalConnectivityPoint
+        start: Point
+        end: Point
         from_layer: string
         to_layer: string
         width: number
@@ -41,20 +47,13 @@ export type PhysicalConnectivityTrace = {
   >
 }
 
-export type PhysicalConnectivityObstacleShape = {
+export type PhysicalConnectivityObstacle = Box & {
   obstacleId?: string
   type: "rect" | "oval"
   shape?: "circle"
-  center: PhysicalConnectivityPoint
-  width: number
-  height: number
   ccwRotationDegrees?: number
   layers: string[]
-}
-
-export type PhysicalConnectivityObstacle = PhysicalConnectivityObstacleShape & {
-  /** This obstacle represents electrically continuous copper on its layers. */
-  /** Resolved net memberships, rather than aliases or ID-derived types. */
+  /** Electrically continuous copper with already resolved net memberships. */
   netNames: string[]
 }
 
@@ -62,7 +61,7 @@ export type PhysicalConnectivityEndpoint = {
   /** Unique, stable key used to compare terminal partitions across revisions. */
   endpointKey: string
   endpointLabel?: string
-  point: PhysicalConnectivityPoint
+  point: Point
   layers: string[]
   netName: string
 }

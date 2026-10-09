@@ -6,11 +6,9 @@ export { PcbConnectivityMap } from "./PcbConnectivityMap"
 export { capturePhysicalConnectivity } from "./capturePhysicalConnectivity"
 export { findSplitPhysicalConnectivityComponents } from "./findSplitPhysicalConnectivityComponents"
 export type {
-  PhysicalConnectivityPoint,
   PhysicalConnectivityWire,
   PhysicalConnectivityVia,
   PhysicalConnectivityTrace,
-  PhysicalConnectivityObstacleShape,
   PhysicalConnectivityObstacle,
   PhysicalConnectivityEndpoint,
   PhysicalConnectivityInput,
