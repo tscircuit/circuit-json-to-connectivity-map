@@ -11,6 +11,8 @@ export type PhysicalConnectivityVia = PhysicalConnectivityPoint & {
   from_layer: string
   to_layer: string
   via_diameter?: number
+  /** Actual conductive layer span, supplied by the caller's drill policy. */
+  layers: string[]
 }
 
 export type PhysicalConnectivityTrace = {
@@ -24,7 +26,8 @@ export type PhysicalConnectivityTrace = {
         route_type: "jumper"
         start: PhysicalConnectivityPoint
         end: PhysicalConnectivityPoint
-        footprint: "0603" | "1206" | "1206x4_pair"
+        /** Descriptive metadata only; pad geometry comes from obstacles. */
+        footprint?: string
         layer: string
       }
     | {
@@ -50,6 +53,7 @@ export type PhysicalConnectivityObstacleShape = {
 }
 
 export type PhysicalConnectivityObstacle = PhysicalConnectivityObstacleShape & {
+  /** This obstacle represents electrically continuous copper on its layers. */
   /** Resolved net memberships, rather than aliases or ID-derived types. */
   netNames: string[]
 }

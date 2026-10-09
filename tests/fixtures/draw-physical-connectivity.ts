@@ -4,7 +4,7 @@ import type {
   PhysicalConnectivitySnapshot,
 } from "../../src"
 
-const colors = ["#2563eb", "#c2410c"]
+const colors = ["#2563eb", "#c2410c", "#059669"]
 const escape = (value: string) =>
   value.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
 const text = (
@@ -71,8 +71,7 @@ export function drawPhysicalConnectivity({
       const b = xy(end)
       const line = `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${colorAt(wires[0])}" stroke-width="${start.width * scale}" stroke-linecap="${jumper ? "butt" : "round"}"`
       if (!jumper) return `${line}/>`
-      return `<rect x="${Math.min(a.x, b.x) + 0.4 * scale}" y="${a.y - 0.3 * scale}" width="${Math.abs(b.x - a.x) - 0.8 * scale}" height="${0.6 * scale}" fill="#e2e8f0" fill-opacity="0.65" stroke="#64748b"/>
-        ${line} stroke-dasharray="8 7"/>`
+      return `${line} stroke-dasharray="8 7"/>`
     })
   })
   const terminals = input.endpoints.map((endpoint) => {

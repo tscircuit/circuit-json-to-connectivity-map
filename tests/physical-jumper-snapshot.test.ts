@@ -19,6 +19,11 @@ test("a jumper bridges its pads without connecting a trace under its insulated b
       { endpointKey: "left", endpointLabel: "L", point: { x: -0.825, y: 0 } },
       { endpointKey: "right", endpointLabel: "R", point: { x: 0.825, y: 0 } },
       {
+        endpointKey: "outside-pad",
+        endpointLabel: "outside pad",
+        point: { x: -0.825, y: 0.3 },
+      },
+      {
         endpointKey: "under-bottom",
         endpointLabel: "bottom",
         point: { x: 0, y: -1 },
@@ -28,8 +33,8 @@ test("a jumper bridges its pads without connecting a trace under its insulated b
     obstacles: [-0.825, 0.825].map((x) => ({
       type: "rect",
       center: { x, y: 0 },
-      width: 0.8,
-      height: 0.95,
+      width: 0.1,
+      height: 0.1,
       layers: ["top"],
       netNames: ["NET"],
     })),
@@ -68,10 +73,12 @@ test("a jumper bridges its pads without connecting a trace under its insulated b
   const copper = capturePhysicalConnectivity(copperCrossing)
   expect(jumper.endpointComponents).toEqual([
     ["left", "right"],
+    ["outside-pad"],
     ["under-bottom", "under-top"],
   ])
   expect(copper.endpointComponents).toEqual([
     ["left", "right", "under-bottom", "under-top"],
+    ["outside-pad"],
   ])
 
   const options = {
@@ -81,6 +88,7 @@ test("a jumper bridges its pads without connecting a trace under its insulated b
       left: [-24, -15],
       right: [12, -15],
       "under-bottom": [-28, 27],
+      "outside-pad": [-55, -15],
     } as Record<string, [number, number]>,
   }
   await expect(
@@ -92,18 +100,18 @@ test("a jumper bridges its pads without connecting a trace under its insulated b
           ...options,
           input,
           snapshot: jumper,
-          title: "0603 jumper: two physical components",
-          note: "L connects to R; top connects only to bottom.",
+          title: "Explicit jumper: three components",
+          note: "Small actual pads do not reach the outside terminal.",
         }),
         drawPhysicalConnectivity({
           ...options,
           input: copperCrossing,
           snapshot: copper,
-          title: "Ordinary copper: one component",
-          note: "Without jumper metadata, the copper lines touch.",
+          title: "Ordinary copper: two components",
+          note: "Copper lines touch; the outside terminal stays isolated.",
         }),
       ],
-      "Dashed blue bridge: jumper connection. Gray body: insulation. Rectangles: conductive pads.",
+      "Dashed blue: insulated jumper bridge. Small rectangles: actual pads; no footprint-derived copper.",
     ),
   ).toMatchSvgSnapshot(import.meta.path)
 })

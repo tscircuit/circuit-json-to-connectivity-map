@@ -136,10 +136,17 @@ const snapshot = capturePhysicalConnectivity({
 ```
 
 Supported geometry includes rotated rectangular pads, circular pads, wire
-segments, vias across their layer span, 0603/1206/1206x4_pair jumper pads, and
+segments, vias with explicit physical `layers`, jumper contact points, and
 through-obstacle markers with a same-net multilayer copper witness. Segment width
-comes from its first route point. Jumper placeholder wires do not become exposed
-copper under the jumper body. Include fixed copper in `traces` as well.
+comes from its first route point. Supply via layers according to the actual drill
+span; routing `from_layer`/`to_layer` alone do not specify it.
+
+A jumper electrically bridges its supplied `start` and `end` points. A uniquely
+matching wire span on that layer is an insulated placeholder and is excluded
+from copper contacts; inline jumper markers need no placeholder. Actual jumper
+pad area comes only from supplied obstacles. Footprint names, pad dimensions,
+spacing, and orientation are never inferred. Without pad geometry, only the
+explicit contact points are known. Include fixed copper in `traces` as well.
 
 Non-circular oval pads and malformed bridge/via geometry throw an error.
 Callers own validation policy and rollback. Compare snapshots using stable,

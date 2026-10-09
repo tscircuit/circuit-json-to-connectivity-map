@@ -246,7 +246,14 @@ test("vias connect their full layer span but crossing traces on separate layers 
     trace("via-route", [
       wire(-1, 0, 0.2),
       wire(0, 0, 0.2),
-      { route_type: "via", x: 0, y: 0, from_layer: "top", to_layer: "bottom" },
+      {
+        route_type: "via",
+        x: 0,
+        y: 0,
+        from_layer: "top",
+        to_layer: "bottom",
+        layers: ["top", "inner1", "inner2", "bottom"],
+      },
       wire(0, 0, 0.2, "bottom"),
       wire(1, 0, 0.2, "bottom"),
     ]),
@@ -342,7 +349,14 @@ test("non-colocated wire-via adjacency is rejected instead of inventing a connec
   input.traces = [
     trace("ambiguous-via", [
       wire(-1, 0),
-      { route_type: "via", x: 0, y: 0, from_layer: "top", to_layer: "bottom" },
+      {
+        route_type: "via",
+        x: 0,
+        y: 0,
+        from_layer: "top",
+        to_layer: "bottom",
+        layers: ["top", "bottom"],
+      },
       wire(1, 0, 0.1, "bottom"),
     ]),
   ]
@@ -407,5 +421,197 @@ test("duplicate terminal keys are rejected", () => {
   input.endpoints[1].endpointKey = input.endpoints[0].endpointKey
   expect(() => capturePhysicalConnectivity(input)).toThrow(
     "Duplicate physical endpoint key",
+  )
+})
+
+test("custom diagonal jumpers use actual rotated pad geometry", () => {
+  const input = problem([
+    [-1.2, -0.4],
+    [1.2, 0.4],
+    [-1, -0.2],
+  ])
+  input.obstacles = input.endpoints.slice(0, 2).map((endpoint) => ({
+    type: "rect",
+    center: endpoint.point,
+    width: 0.8,
+    height: 0.1,
+    ccwRotationDegrees: 45,
+    layers: ["top"],
+    netNames: ["NET"],
+  }))
+  input.traces = [
+    trace("custom-bridge", [
+      wire(-1.2, -0.4),
+      wire(1.2, 0.4),
+      {
+        route_type: "jumper",
+        start: { x: -1.2, y: -0.4 },
+        end: { x: 1.2, y: 0.4 },
+        footprint: "custom",
+        layer: "top",
+      },
+    ]),
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1", "terminal-2"],
+  ])
+  input.obstacles[0].width = 0.2
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+    ["terminal-2"],
+  ])
+})
+
+test("inline jumper contacts connect their wires without a placeholder segment", () => {
+  const input = problem([
+    [-1, 0],
+    [2, 1],
+  ])
+  input.traces = [
+    trace("inline", [
+      wire(-1, 0),
+      wire(0, 0),
+      {
+        route_type: "jumper",
+        start: { x: 0, y: 0 },
+        end: { x: 1, y: 1 },
+        layer: "top",
+      },
+      wire(1, 1),
+      wire(2, 1),
+    ]),
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+  ])
+})
+
+test("nearby copper is not mistaken for the jumper's insulated placeholder", () => {
+  const input = problem([
+    [-0.825, 0],
+    [0.825, 0],
+    [0, -1],
+    [0, 1],
+  ])
+  input.traces = [
+    trace("bridge-with-nearby-copper", [
+      wire(-0.825, 0.005, 0.02),
+      wire(0.825, 0.005, 0.02),
+      {
+        route_type: "jumper",
+        start: { x: -0.825, y: 0 },
+        end: { x: 0.825, y: 0 },
+        footprint: "0603",
+        layer: "top",
+      },
+    ]),
+    trace("crossing", [wire(0, -1), wire(0, 1)]),
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1", "terminal-2", "terminal-3"],
+  ])
+})
+
+test("ambiguous duplicate jumper placeholders are rejected", () => {
+  const input = problem([
+    [-1, 0],
+    [1, 0],
+  ])
+  input.traces = [
+    trace("ambiguous", [
+      wire(-1, 0),
+      wire(1, 0),
+      wire(-1, 0),
+      {
+        route_type: "jumper",
+        start: { x: -1, y: 0 },
+        end: { x: 1, y: 0 },
+        layer: "top",
+      },
+    ]),
+  ]
+  expect(() => capturePhysicalConnectivity(input)).toThrow(
+    "matched 2 placeholder wire segments",
+  )
+})
+
+test("unsupported geometry on nets without supplied terminals is irrelevant", () => {
+  const input = problem([
+    [0, 0],
+    [1, 0],
+  ])
+  input.traces = [
+    trace("route", [wire(0, 0), wire(1, 0)]),
+    trace(
+      "unrelated",
+      [
+        {
+          route_type: "through_obstacle",
+          start: { x: 3, y: 0 },
+          end: { x: 4, y: 0 },
+          from_layer: "top",
+          to_layer: "bottom",
+          width: 0.1,
+        },
+      ],
+      "UNRELATED",
+    ),
+  ]
+  input.obstacles = [
+    {
+      type: "oval",
+      center: { x: 3, y: 0 },
+      width: 2,
+      height: 1,
+      layers: ["top"],
+      netNames: ["UNRELATED"],
+    },
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+  ])
+})
+
+test("via connectivity uses supplied physical layers rather than the routing transition", () => {
+  const input = problem([
+    [-1, 0],
+    [1, 0, "inner1"],
+    [0.45, 0, "bottom"],
+  ])
+  input.layerCount = 4
+  input.traces = [
+    trace("via", [
+      wire(-1, 0),
+      wire(0, 0),
+      {
+        route_type: "via",
+        x: 0,
+        y: 0,
+        from_layer: "top",
+        to_layer: "inner1",
+        layers: ["top", "inner1", "inner2", "bottom"],
+        via_diameter: 1,
+      },
+      wire(0, 0, 0.1, "inner1"),
+      wire(1, 0, 0.1, "inner1"),
+    ]),
+  ]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1", "terminal-2"],
+  ])
+  const via = input.traces[0].route[2]
+  if (via.route_type !== "via") throw new Error("Expected via")
+  via.layers = ["top", "inner1"]
+  expect(capturePhysicalConnectivity(input).endpointComponents).toEqual([
+    ["terminal-0", "terminal-1"],
+    ["terminal-2"],
+  ])
+  via.layers = ["top", "unknown"]
+  expect(() => capturePhysicalConnectivity(input)).toThrow(
+    "explicit physical layers",
+  )
+  delete (via as Partial<typeof via>).layers
+  expect(() => capturePhysicalConnectivity(input)).toThrow(
+    "explicit physical layers",
   )
 })

@@ -234,15 +234,17 @@ const getBoardLayers = (layerCount: number) => {
 }
 
 const getViaLayers = (via: ViaRoutePoint, boardLayers: string[]) => {
-  const fromIndex = boardLayers.indexOf(via.from_layer)
-  const toIndex = boardLayers.indexOf(via.to_layer)
-  if (fromIndex < 0 || toIndex < 0) {
-    return [...new Set([via.from_layer, via.to_layer])]
+  if (
+    !via.layers?.length ||
+    !via.layers.includes(via.from_layer) ||
+    !via.layers.includes(via.to_layer) ||
+    via.layers.some((layer) => !boardLayers.includes(layer))
+  ) {
+    throw new Error(
+      "Via requires explicit physical layers containing its routing endpoints",
+    )
   }
-  return boardLayers.slice(
-    Math.min(fromIndex, toIndex),
-    Math.max(fromIndex, toIndex) + 1,
-  )
+  return via.layers
 }
 
 const createBridgeContact = (
@@ -259,85 +261,10 @@ const createBridgeContact = (
   bounds: expandBounds(getPointBounds(point), diameter / 2),
 })
 
-const JUMPER_ENDPOINT_TOLERANCE_MM = 0.01
-const JUMPER_PAD_DIMENSIONS: Record<
-  "0603" | "1206" | "1206x4_pair",
-  {
-    horizontalWidth: number
-    horizontalHeight: number
-    centerSpacings: number[]
-  }
-> = {
-  "0603": {
-    horizontalWidth: 0.8,
-    horizontalHeight: 0.95,
-    // Current and legacy capacity-router emitters disagree on this spacing.
-    centerSpacings: [1.65, 1.8],
-  },
-  "1206": {
-    horizontalWidth: 0.6,
-    horizontalHeight: 1.6,
-    centerSpacings: [3.2],
-  },
-  "1206x4_pair": {
-    horizontalWidth: 0.8,
-    horizontalHeight: 0.5,
-    centerSpacings: [2.7],
-  },
-}
-
 type JumperRoutePoint = Extract<
   PhysicalConnectivityTrace["route"][number],
   { route_type: "jumper" }
 >
-
-const createJumperPad = (
-  jumper: JumperRoutePoint,
-  center: Point,
-  bridgeId: string,
-): CopperPrimitive => {
-  if (!jumper.layer) throw new Error(`Jumper ${bridgeId} is missing its layer`)
-  const dimensions = JUMPER_PAD_DIMENSIONS[jumper.footprint]
-  if (!dimensions) {
-    throw new Error(
-      `Unsupported jumper footprint ${String(jumper.footprint)} on ${bridgeId}`,
-    )
-  }
-  const deltaX = Math.abs(jumper.end.x - jumper.start.x)
-  const deltaY = Math.abs(jumper.end.y - jumper.start.y)
-  const hasExpectedSpacing = (spacing: number) =>
-    dimensions.centerSpacings.some(
-      (candidate) =>
-        Math.abs(spacing - candidate) < JUMPER_ENDPOINT_TOLERANCE_MM,
-    )
-  const horizontal =
-    deltaY < JUMPER_ENDPOINT_TOLERANCE_MM && hasExpectedSpacing(deltaX)
-  const vertical =
-    deltaX < JUMPER_ENDPOINT_TOLERANCE_MM && hasExpectedSpacing(deltaY)
-  if (!horizontal && !vertical) {
-    throw new Error(
-      `Jumper ${bridgeId} does not match ${jumper.footprint} pad spacing`,
-    )
-  }
-  const obstacle: Obstacle = {
-    type: "rect",
-    center: { ...center },
-    width: horizontal
-      ? dimensions.horizontalWidth
-      : dimensions.horizontalHeight,
-    height: horizontal
-      ? dimensions.horizontalHeight
-      : dimensions.horizontalWidth,
-    layers: [jumper.layer],
-  }
-  return {
-    kind: "obstacle",
-    obstacle,
-    layers: obstacle.layers,
-    bridgeId,
-    bounds: getObstacleBounds(obstacle),
-  }
-}
 
 const wireSegmentMatchesJumper = (
   start: WireRoutePoint,
@@ -346,8 +273,7 @@ const wireSegmentMatchesJumper = (
 ) => {
   if (start.layer !== jumper.layer || end.layer !== jumper.layer) return false
   const pointMatches = (first: Point, second: Point) =>
-    Math.abs(first.x - second.x) < JUMPER_ENDPOINT_TOLERANCE_MM &&
-    Math.abs(first.y - second.y) < JUMPER_ENDPOINT_TOLERANCE_MM
+    distance(first, second) <= GEOMETRY_EPSILON_MM
   const forward =
     pointMatches(start, jumper.start) && pointMatches(end, jumper.end)
   const reverse =
@@ -379,11 +305,14 @@ const extractTraceCopper = (
         matchingWireEndIndices.push(routeIndex)
       }
     }
-    if (matchingWireEndIndices.length !== 1) {
+    if (matchingWireEndIndices.length > 1) {
       throw new Error(
         `Jumper ${trace.pcb_trace_id}:${jumper.routePointIndex} matched ${matchingWireEndIndices.length} placeholder wire segments`,
       )
     }
+    // Inline bridge markers need no placeholder. Appended markers explicitly
+    // identify an insulated wire span by its endpoints and layer.
+    if (matchingWireEndIndices.length === 0) continue
     const wireEndIndex = matchingWireEndIndices[0]!
     if (jumperByWireEndIndex.has(wireEndIndex)) {
       throw new Error(
@@ -408,9 +337,7 @@ const extractTraceCopper = (
         const segmentStart = previousWire
         const jumper = jumperByWireEndIndex.get(routePointIndex)
         if (jumper) {
-          // Capacity autorouter serializes a jumper as a placeholder wire plus
-          // appended metadata. The body is insulated and must not participate
-          // in PCB copper contacts.
+          // The explicit jumper identifies this span as insulated, not copper.
         } else {
           const radius = segmentStart.width / 2
           primitives.push({
@@ -462,8 +389,8 @@ const extractTraceCopper = (
     const bridgeId = `${trace.pcb_trace_id}:${routePointIndex}:${routePoint.route_type}`
     if (routePoint.route_type === "jumper") {
       primitives.push(
-        createJumperPad(routePoint, routePoint.start, bridgeId),
-        createJumperPad(routePoint, routePoint.end, bridgeId),
+        createBridgeContact(routePoint.start, 0, [routePoint.layer], bridgeId),
+        createBridgeContact(routePoint.end, 0, [routePoint.layer], bridgeId),
       )
       continue
     }
@@ -539,21 +466,26 @@ export const capturePhysicalConnectivity = (
   }
 
   for (const obstacle of input.obstacles) {
+    const netNames = [...new Set(obstacle.netNames)].filter((netName) =>
+      primitivesByNet.has(netName),
+    )
+    if (netNames.length === 0) continue
     const primitive: CopperPrimitive = {
       kind: "obstacle",
       obstacle,
       layers: obstacle.layers,
       bounds: getObstacleBounds(obstacle),
     }
-    for (const netName of new Set(obstacle.netNames)) {
+    for (const netName of netNames) {
       const obstacles = obstaclesByNet.get(netName) ?? []
       obstacles.push(obstacle)
       obstaclesByNet.set(netName, obstacles)
-      if (primitivesByNet.has(netName)) addPrimitive(netName, primitive)
+      addPrimitive(netName, primitive)
     }
   }
 
   for (const trace of input.traces) {
+    if (!primitivesByNet.has(trace.netName)) continue
     const sameNetObstacles = obstaclesByNet.get(trace.netName) ?? []
     const copper = extractTraceCopper(
       trace,
@@ -561,7 +493,6 @@ export const capturePhysicalConnectivity = (
       input.defaultViaDiameter,
       sameNetObstacles,
     )
-    if (!primitivesByNet.has(trace.netName)) continue
     for (const primitive of copper) addPrimitive(trace.netName, primitive)
   }
 
