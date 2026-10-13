@@ -13,11 +13,13 @@ const circuitJson: AnyCircuitElement[] = [
   ...[0, 1].map((index) => ({
     type: "pcb_via" as const,
     pcb_via_id: `via_${index}`,
+    hole_diameter: 0.3,
+    outer_diameter: 0.6,
     source_net_id: "gnd",
     pcb_port_ids: [`top_${index}`, `bottom_${index}`],
     x: 0,
     y: index,
-    layers: ["top", "bottom"] as const,
+    layers: ["top", "bottom"] as ["top", "bottom"],
   })),
   {
     type: "pcb_trace",
@@ -64,6 +66,8 @@ test("connects a via's ports even without source or trace metadata", () => {
   const via: AnyCircuitElement = {
     type: "pcb_via",
     pcb_via_id: "isolated_via",
+    hole_diameter: 0.3,
+    outer_diameter: 0.6,
     pcb_port_ids: ["isolated_top", "isolated_bottom"],
     x: 0,
     y: 0,
@@ -96,6 +100,8 @@ test("keeps an overlapping different-net via separate", () => {
   const signalVia: AnyCircuitElement = {
     type: "pcb_via",
     pcb_via_id: "signal_via",
+    hole_diameter: 0.3,
+    outer_diameter: 0.6,
     source_net_id: "signal_net",
     pcb_port_ids: ["signal_top", "signal_bottom"],
     x: 0,

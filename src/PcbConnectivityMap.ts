@@ -100,6 +100,15 @@ export class PcbConnectivityMap {
       if (segment1A.route_type !== "wire") continue
       if (segment1B.route_type !== "wire") continue
       if (segment1A.layer !== segment1B.layer) continue
+      const minX = Math.min(segment1A.x, segment1B.x)
+      const minY = Math.min(segment1A.y, segment1B.y)
+      const maxX = Math.max(segment1A.x, segment1B.x)
+      const maxY = Math.max(segment1A.y, segment1B.y)
+      const finiteBounds =
+        Number.isFinite(minX) &&
+        Number.isFinite(minY) &&
+        Number.isFinite(maxX) &&
+        Number.isFinite(maxY)
       for (let j = 0; j < trace2.route.length - 1; j++) {
         const segment2A = trace2.route[j]
         const segment2B = trace2.route[j + 1]
@@ -109,18 +118,20 @@ export class PcbConnectivityMap {
         if (segment2A.layer !== segment2B.layer) continue
         if (segment1A.layer !== segment2A.layer) continue
 
-        // Board-world millimeters (+X right, +Y up). A conservative bound
-        // rejects distant segments before the unchanged continuous predicate.
-        const radius = (segment1A.width + segment2A.width) / 2
+        // Reject distant pairs before the unchanged continuous predicate.
+        const lineThickness = (segment1A.width + segment2A.width) / 2
+        const expansion = Math.max(0, lineThickness) + 1e-9
         if (
-          Math.max(segment1A.x, segment1B.x) + radius <
-            Math.min(segment2A.x, segment2B.x) ||
-          Math.max(segment2A.x, segment2B.x) + radius <
-            Math.min(segment1A.x, segment1B.x) ||
-          Math.max(segment1A.y, segment1B.y) + radius <
-            Math.min(segment2A.y, segment2B.y) ||
-          Math.max(segment2A.y, segment2B.y) + radius <
-            Math.min(segment1A.y, segment1B.y)
+          finiteBounds &&
+          Number.isFinite(segment2A.x) &&
+          Number.isFinite(segment2A.y) &&
+          Number.isFinite(segment2B.x) &&
+          Number.isFinite(segment2B.y) &&
+          Number.isFinite(lineThickness) &&
+          (Math.min(segment2A.x, segment2B.x) > maxX + expansion ||
+            Math.max(segment2A.x, segment2B.x) < minX - expansion ||
+            Math.min(segment2A.y, segment2B.y) > maxY + expansion ||
+            Math.max(segment2A.y, segment2B.y) < minY - expansion)
         )
           continue
 
@@ -129,7 +140,7 @@ export class PcbConnectivityMap {
           [segment1A, segment1B],
           [segment2A, segment2B],
           {
-            lineThickness: (segment1A.width + segment2A.width) / 2,
+            lineThickness,
           },
         )
         if (isOverlapping) {
