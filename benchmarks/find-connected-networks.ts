@@ -1,9 +1,11 @@
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs"
 import { findConnectedNetworks } from "../src/findConnectedNetworks"
+import skAm62ConnectivityFixture from "../tests/assets/sk-am62-connectivity-connections.json"
 
 type BenchmarkSample = {
   sampleNumber: number
-  independentNetCount: number
+  sampleName: string
+  connections: string[][]
 }
 
 type BenchmarkResult = BenchmarkSample & {
@@ -17,10 +19,17 @@ type BenchmarkSelection = {
 }
 
 const benchmarkSamples: BenchmarkSample[] = [
-  1_000, 2_000, 4_000, 8_000, 12_000,
-].map((independentNetCount, sampleIndex) => ({
+  {
+    sampleName: "sk-am62",
+    connections: skAm62ConnectivityFixture.connections,
+  },
+  ...[1_000, 2_000, 4_000, 8_000, 12_000].map((independentNetCount) => ({
+    sampleName: `${independentNetCount}-independent-nets`,
+    connections: createIndependentConnections(independentNetCount),
+  })),
+].map((sample, sampleIndex) => ({
+  ...sample,
   sampleNumber: sampleIndex + 1,
-  independentNetCount,
 }))
 
 function printHelp(): void {
@@ -87,9 +96,8 @@ function createIndependentConnections(independentNetCount: number): string[][] {
 }
 
 function runBenchmarkSample(sample: BenchmarkSample): BenchmarkResult {
-  const connections = createIndependentConnections(sample.independentNetCount)
   const startedAt = performance.now()
-  const networks = findConnectedNetworks(connections)
+  const networks = findConnectedNetworks(sample.connections)
   const durationSeconds = (performance.now() - startedAt) / 1_000
 
   return {
@@ -123,15 +131,23 @@ const runDirectory = `results/run${runNumber.toString().padStart(3, "0")}`
 mkdirSync(runDirectory, { recursive: true })
 
 const incrementalLines = benchmarkResults.map(
-  ({ sampleNumber, independentNetCount, networkCount, durationSeconds }) =>
-    `sample${sampleNumber.toString().padStart(3, "0")} nets=${independentNetCount
+  ({ sampleNumber, sampleName, connections, networkCount, durationSeconds }) =>
+    `sample${sampleNumber.toString().padStart(3, "0")} name=${sampleName.padEnd(
+      22,
+    )} connections=${connections.length
       .toString()
       .padStart(5, "0")} networks=${networkCount
       .toString()
       .padStart(5, "0")} duration=${durationSeconds.toFixed(3)}s`,
 )
 const durations = benchmarkResults.map(({ durationSeconds }) => durationSeconds)
+const averageDuration =
+  durations.reduce(
+    (durationTotal, durationSeconds) => durationTotal + durationSeconds,
+    0,
+  ) / durations.length
 const summaryLines = [
+  `avg duration: ${averageDuration.toFixed(3)}s`,
   `P50 duration: ${getPercentile(durations, 0.5).toFixed(3)}s`,
   `P95 duration: ${getPercentile(durations, 0.95).toFixed(3)}s`,
 ]
