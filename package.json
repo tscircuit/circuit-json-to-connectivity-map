@@ -11,6 +11,7 @@
     "dist"
   ],
   "scripts": {
+    "benchmark": "./benchmark.sh",
     "build": "tsup-node src/index.ts --format esm --sourcemap --dts",
     "format:check": "biome format .",
     "format": "biome format --write ."
