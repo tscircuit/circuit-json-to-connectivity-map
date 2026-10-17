@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="660" viewBox="0 0 1120 660">
+  <rect width="1120" height="660" fill="white"/>
+  <g font-family="sans-serif">
+    <text x="24" y="39" font-size="27" fill="#0f172a">A jumper connection is insulated from copper below</text>
+    <text x="24" y="73" font-size="17" fill="#334155">The same crossing geometry has different connectivity when the horizontal segment is a jumper.</text>
+    <g transform="translate(24 100)"><rect width="520" height="480" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="24" y="34" font-size="21" fill="#0f172a">Explicit jumper: three components</text>
+    <text x="24" y="61" font-size="15" fill="#334155">Small actual pads do not reach the outside terminal.</text>
+    <rect x="150.625" y="238.75" width="12.5" height="12.5" fill="#2563eb" fill-opacity="0.2" stroke="#2563eb" stroke-width="2"/>
+<rect x="356.875" y="238.75" width="12.5" height="12.5" fill="#2563eb" fill-opacity="0.2" stroke="#2563eb" stroke-width="2"/>
+    <line x1="156.875" y1="245" x2="363.125" y2="245" stroke="#2563eb" stroke-width="12.5" stroke-linecap="butt" stroke-dasharray="8 7"/>
+<line x1="260" y1="370" x2="260" y2="120" stroke="#059669" stroke-width="12.5" stroke-linecap="round"/>
+    <circle cx="156.875" cy="245" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+      <text x="132.875" y="230" font-size="17" fill="#2563eb">L</text>
+<circle cx="363.125" cy="245" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+      <text x="375.125" y="230" font-size="17" fill="#2563eb">R</text>
+<circle cx="156.875" cy="207.5" r="4" fill="white" stroke="#c2410c" stroke-width="2"/>
+      <text x="101.875" y="192.5" font-size="17" fill="#c2410c">outside pad</text>
+<circle cx="260" cy="370" r="4" fill="white" stroke="#059669" stroke-width="2"/>
+      <text x="232" y="397" font-size="17" fill="#059669">bottom</text>
+<circle cx="260" cy="120" r="4" fill="white" stroke="#059669" stroke-width="2"/>
+      <text x="270" y="110" font-size="17" fill="#059669">top</text>
+    <text x="24" y="423" font-size="17" fill="#2563eb">Component 1: L + R</text>
+<text x="24" y="450" font-size="17" fill="#c2410c">Component 2: outside pad</text>
+<text x="24" y="477" font-size="17" fill="#059669">Component 3: bottom + top</text></g>
+    <g transform="translate(576 100)"><rect width="520" height="480" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="24" y="34" font-size="21" fill="#0f172a">Ordinary copper: two components</text>
+    <text x="24" y="61" font-size="15" fill="#334155">Copper lines touch; the outside terminal stays isolated.</text>
+    <rect x="150.625" y="238.75" width="12.5" height="12.5" fill="#2563eb" fill-opacity="0.2" stroke="#2563eb" stroke-width="2"/>
+<rect x="356.875" y="238.75" width="12.5" height="12.5" fill="#2563eb" fill-opacity="0.2" stroke="#2563eb" stroke-width="2"/>
+    <line x1="156.875" y1="245" x2="363.125" y2="245" stroke="#2563eb" stroke-width="12.5" stroke-linecap="round"/>
+<line x1="260" y1="370" x2="260" y2="120" stroke="#2563eb" stroke-width="12.5" stroke-linecap="round"/>
+    <circle cx="156.875" cy="245" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+      <text x="132.875" y="230" font-size="17" fill="#2563eb">L</text>
+<circle cx="363.125" cy="245" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+      <text x="375.125" y="230" font-size="17" fill="#2563eb">R</text>
+<circle cx="156.875" cy="207.5" r="4" fill="white" stroke="#c2410c" stroke-width="2"/>
+      <text x="101.875" y="192.5" font-size="17" fill="#c2410c">outside pad</text>
+<circle cx="260" cy="370" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+      <text x="232" y="397" font-size="17" fill="#2563eb">bottom</text>
+<circle cx="260" cy="120" r="4" fill="white" stroke="#2563eb" stroke-width="2"/>
+      <text x="270" y="110" font-size="17" fill="#2563eb">top</text>
+    <text x="24" y="423" font-size="17" fill="#2563eb">Component 1: L + R + bottom + top</text>
+<text x="24" y="450" font-size="17" fill="#c2410c">Component 2: outside pad</text></g>
+    <text x="24" y="614" font-size="16" fill="#334155">Dashed blue: insulated jumper bridge. Small rectangles: actual pads; no footprint-derived copper.</text>
+    <text x="24" y="641" font-size="15" fill="#334155">Colors show captured physical components. Every terminal has the same intended net name (NET).</text>
+  </g>
+</svg>
