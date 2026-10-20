@@ -5,7 +5,7 @@ export class ConnectivityMap {
 
   constructor(netMap: Record<string, string[]>) {
     this.netMap = netMap
-    this.idToNetMap = {}
+    this.idToNetMap = Object.create(null)
     for (const [netId, ids] of Object.entries(netMap)) {
       for (const id of ids) {
         this.idToNetMap[id] = netId
@@ -66,7 +66,7 @@ export class ConnectivityMap {
   }
 
   getIdsConnectedToNet(netId: string): string[] {
-    return this.netMap[netId] || []
+    return Object.hasOwn(this.netMap, netId) ? this.netMap[netId] : []
   }
 
   getNetConnectedToId(id: string): string | undefined {
