@@ -29,18 +29,14 @@ export class ConnectivityMap {
 
       if (existingNets.size === 0) {
         // If no existing nets found, create a new one
-        targetNetId = `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = this.getNextNetId()
         this.netMap[targetNetId] = []
       } else if (existingNets.size === 1) {
         // If only one existing net found, use it
-        targetNetId =
-          existingNets.values().next().value ??
-          `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = existingNets.values().next().value ?? this.getNextNetId()
       } else {
         // If multiple nets found, merge them
-        targetNetId =
-          existingNets.values().next().value ??
-          `connectivity_net${Object.keys(this.netMap).length}`
+        targetNetId = existingNets.values().next().value ?? this.getNextNetId()
         for (const netId of existingNets) {
           if (netId !== targetNetId) {
             this.netMap[targetNetId].push(...this.netMap[netId])
@@ -63,6 +59,17 @@ export class ConnectivityMap {
         this.idToNetMap[id] = targetNetId
       }
     }
+  }
+
+  // Net keys are not always a dense 0..n-1 range (findConnectedNetworks can
+  // leave gaps), so pick the first connectivity_net<i> that is not already a
+  // key instead of deriving one from the key count, which would collide.
+  getNextNetId(): string {
+    let index = Object.keys(this.netMap).length
+    while (this.netMap[`connectivity_net${index}`] !== undefined) {
+      index++
+    }
+    return `connectivity_net${index}`
   }
 
   getIdsConnectedToNet(netId: string): string[] {
