@@ -3,3 +3,7 @@ export { getSourcePortConnectivityMapFromCircuitJson } from "./getSourcePortConn
 export { getFullConnectivityMapFromCircuitJson } from "./getFullConnectivityMapFromCircuitJson"
 export { ConnectivityMap } from "./ConnectivityMap"
 export { PcbConnectivityMap } from "./PcbConnectivityMap"
+export {
+  getCopperConductorComponents,
+  type CopperConductor,
+} from "./getCopperConductorComponents"
