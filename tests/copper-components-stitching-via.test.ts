@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import type { AnyCircuitElement } from "circuit-json"
-import { getCopperConductorComponents } from "../src"
+import { PcbConnectivityMap } from "../src"
 import { makeCopperPourCircuit } from "./fixtures/copper-pour-circuit"
 
 test("generated stitching vias conduct copper without acting as authored anchors", () => {
@@ -18,11 +18,12 @@ test("generated stitching vias conduct copper without acting as authored anchors
     layers: ["top", "bottom"],
     pcb_port_ids: ["via_top", "via_bottom"],
   })
-  const authored = getCopperConductorComponents(circuitJson)
-  const generated = getCopperConductorComponents(
+  const authored = new PcbConnectivityMap(
     circuitJson,
-    new Set(["via_gnd"]),
-  )
+  ).getCopperConductorComponents()
+  const generated = new PcbConnectivityMap(
+    circuitJson,
+  ).getCopperConductorComponents(new Set(["via_gnd"]))
   expect(authored).toHaveLength(1)
   expect(generated).toHaveLength(1)
   expect(authored[0]!.some((c) => c.isTerminal)).toBe(true)

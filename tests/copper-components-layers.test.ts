@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getCopperConductorComponents } from "../src"
+import { PcbConnectivityMap } from "../src"
 import {
   getPourPortIds,
   makeCopperPourCircuit,
@@ -12,9 +12,11 @@ test("plated copper bridges layers that XY overlap alone cannot connect", () => 
   )!
   if (pad.type !== "pcb_smtpad") throw new Error("Expected a pad")
   pad.layer = "bottom"
-  expect(getPourPortIds(getCopperConductorComponents(circuitJson))).toEqual([
-    "port_0",
-  ])
+  expect(
+    getPourPortIds(
+      new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
+    ),
+  ).toEqual(["port_0"])
   circuitJson.push({
     type: "pcb_plated_hole",
     pcb_plated_hole_id: "plated_bridge",
@@ -27,6 +29,10 @@ test("plated copper bridges layers that XY overlap alone cannot connect", () => 
     layers: ["top", "bottom"],
   })
   expect(
-    new Set(getPourPortIds(getCopperConductorComponents(circuitJson))),
+    new Set(
+      getPourPortIds(
+        new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
+      ),
+    ),
   ).toEqual(new Set(["port_0", "port_1"]))
 })

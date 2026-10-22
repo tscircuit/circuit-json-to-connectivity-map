@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import {
-  getCopperConductorComponents,
+  PcbConnectivityMap,
   getFullConnectivityMapFromCircuitJson,
 } from "../src"
 import {
@@ -18,14 +18,15 @@ test("physical pour connectivity does not join an outside terminal on the same n
       "port_2",
     ]),
   ).toBe(true)
-  expect(getPourPortIds(getCopperConductorComponents(circuitJson))).toEqual([
-    "port_0",
-    "port_1",
-  ])
+  expect(
+    getPourPortIds(
+      new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
+    ),
+  ).toEqual(["port_0", "port_1"])
   expect(circuitJson).toEqual(original)
   expect(
-    getCopperConductorComponents(
+    new PcbConnectivityMap(
       circuitJson.filter((e) => e.type !== "pcb_copper_pour"),
-    ),
+    ).getCopperConductorComponents(),
   ).toEqual([])
 })

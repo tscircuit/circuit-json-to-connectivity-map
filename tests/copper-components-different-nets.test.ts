@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getCopperConductorComponents } from "../src"
+import { PcbConnectivityMap } from "../src"
 import {
   getPourPortIds,
   makeCopperPourCircuit,
@@ -20,7 +20,9 @@ test("overlapping copper on different nets remains in separate components", () =
     pcb_copper_pour_id: "pour_signal",
     source_net_id: "signal",
   })
-  const components = getCopperConductorComponents(circuitJson)
+  const components = new PcbConnectivityMap(
+    circuitJson,
+  ).getCopperConductorComponents()
   expect(getPourPortIds(components)).toEqual(["port_0"])
   const signalComponent = components.find((conductors) =>
     conductors.some((c) => c.pourId === "pour_signal"),

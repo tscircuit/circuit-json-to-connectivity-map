@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getCopperConductorComponents } from "../src"
+import { PcbConnectivityMap } from "../src"
 import {
   getPourPortIds,
   makeCopperPourCircuit,
@@ -18,8 +18,9 @@ test("a trace ID does not join disconnected segments across a layer break", () =
       { route_type: "wire", x: 4, y: 0, width: 0.2, layer: "top" },
     ],
   })
-  expect(getPourPortIds(getCopperConductorComponents(circuitJson))).toEqual([
-    "port_0",
-    "port_1",
-  ])
+  expect(
+    getPourPortIds(
+      new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
+    ),
+  ).toEqual(["port_0", "port_1"])
 })

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { getCopperConductorComponents } from "../src"
+import { PcbConnectivityMap } from "../src"
 import {
   getPourPortIds,
   makeCopperPourCircuit,
@@ -40,8 +40,9 @@ test("a route via spans inner copper layers when no standalone via exists", () =
       ],
     },
   )
-  expect(getPourPortIds(getCopperConductorComponents(circuitJson))).toEqual([
-    "port_0",
-    "port_1",
-  ])
+  expect(
+    getPourPortIds(
+      new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
+    ),
+  ).toEqual(["port_0", "port_1"])
 })

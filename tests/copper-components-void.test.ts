@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import type { AnyCircuitElement } from "circuit-json"
-import { getCopperConductorComponents } from "../src"
+import { PcbConnectivityMap } from "../src"
 import {
   getPourPortIds,
   makeCopperPourCircuit,
@@ -40,7 +40,9 @@ test("a pad inside a pour void is physically disconnected", () => {
             },
           },
   )
-  expect(getPourPortIds(getCopperConductorComponents(circuitJson))).toEqual([
-    "port_0",
-  ])
+  expect(
+    getPourPortIds(
+      new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
+    ),
+  ).toEqual(["port_0"])
 })

@@ -2,8 +2,4 @@ export { findConnectedNetworks } from "./findConnectedNetworks"
 export { getSourcePortConnectivityMapFromCircuitJson } from "./getSourcePortConnectivityMapFromCircuitJson"
 export { getFullConnectivityMapFromCircuitJson } from "./getFullConnectivityMapFromCircuitJson"
 export { ConnectivityMap } from "./ConnectivityMap"
-export { PcbConnectivityMap } from "./PcbConnectivityMap"
-export {
-  getCopperConductorComponents,
-  type CopperConductor,
-} from "./getCopperConductorComponents"
+export { PcbConnectivityMap, type CopperConductor } from "./PcbConnectivityMap"

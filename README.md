@@ -15,7 +15,6 @@ npm add circuit-json-to-connectivity-map
 - Find connected networks from a list of connections
 - Generate source port connectivity maps from circuit JSON data
 - Generate full connectivity maps from circuit JSON data
-- Find physically connected copper-pour components
 
 ## Usage
 
@@ -85,35 +84,6 @@ console.log(fullConnectivityMap.getNetConnectedToId("pcb_port1"))
 ```
 
 ## API Reference
-
-### `getCopperConductorComponents(circuitJson, generatedStitchingViaIds?)`
-
-Returns groups of physically touching, same-net copper conductors associated
-with poured nets. SMT pads, plated holes, trace segments, and vias can connect
-pours and terminals. Logical net membership alone does not connect separated
-copper, and copper on different layers requires a plated bridge.
-
-```typescript
-import { getCopperConductorComponents } from "circuit-json-to-connectivity-map"
-
-const connectedTerminalGroups = getCopperConductorComponents(circuitJson)
-  .filter((conductors) => conductors.some((conductor) => conductor.pourId))
-  .map((conductors) => [
-    ...new Set(conductors.flatMap((conductor) => conductor.pcbPortIds ?? [])),
-  ])
-  .filter((pcbPortIds) => pcbPortIds.length > 1)
-```
-
-Each conductor exposes its net, layers, terminal status, and available pour,
-via, and PCB port IDs. A generated stitching via still conducts copper, but
-passing its ID in `generatedStitchingViaIds` prevents it from counting as an
-authored terminal when finding floating copper. Callers must remove traces and
-vias that will be discarded before requesting fresh-routing connectivity.
-
-Geometry uses circuit-world points in millimeters: +X right, +Y up, and +Z
-toward the top PCB layer. Returned Flatten polygons use the same right-handed
-frame scaled by `1e6` for robust contact predicates; they are not millimeter
-coordinates. Unassigned pours are ignored, and inputs without pours return `[]`.
 
 ### `findConnectedNetworks(connections: Array<string[]>): Record<string, string[]>`
 
