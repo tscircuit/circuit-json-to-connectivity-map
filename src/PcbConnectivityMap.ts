@@ -4,10 +4,7 @@ import type {
   PCBPort,
   PCBTrace,
   LayerRef,
-  PcbCopperPour,
-  PcbPort,
   PcbTraceRoutePoint,
-  PcbVia,
 } from "circuit-json"
 import Flatbush from "flatbush"
 import {
@@ -24,10 +21,6 @@ import { ConnectivityMap } from "./ConnectivityMap"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 
-type CopperNetId = NonNullable<
-  ReturnType<ConnectivityMap["getNetConnectedToId"]>
->
-
 // Match the pour solver's coordinate scale. Flatten's internal epsilon must
 // not collapse the sub-micron edges emitted by polygon clipping into points.
 const GEOMETRY_SCALE = 1e6
@@ -35,11 +28,11 @@ const CONTACT_TOLERANCE = 1e-7 * GEOMETRY_SCALE
 
 export interface CopperConductor {
   layers: LayerRef[]
-  netId: CopperNetId
+  netId: string
   isTerminal: boolean
-  pourId?: PcbCopperPour["pcb_copper_pour_id"]
-  pcbPortIds?: PcbPort["pcb_port_id"][]
-  viaId?: PcbVia["pcb_via_id"]
+  pourId?: string
+  pcbPortIds?: string[]
+  viaId?: string
 }
 
 interface CopperConductorGeometry extends CopperConductor {
@@ -237,7 +230,7 @@ export class PcbConnectivityMap {
    * copper, but callers can exclude them from authored terminal anchors.
    */
   getCopperConductorComponents(
-    generatedStitchingViaIds: ReadonlySet<PcbVia["pcb_via_id"]> = new Set(),
+    generatedStitchingViaIds: ReadonlySet<string> = new Set(),
   ): CopperConductor[][] {
     this.copperConductorComponents ??= this._buildCopperConductorComponents()
     return this.copperConductorComponents.map((conductors) =>
