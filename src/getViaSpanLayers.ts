@@ -1,19 +1,5 @@
 import type { LayerRef } from "circuit-json"
 
-/**
- * All copper layers a drilled via physically crosses between fromLayer and
- * toLayer (inclusive), in from→to order, for a board with `layerCount`
- * copper layers.
- *
- * A via barrel passes through every layer between its end layers, so
- * `pcb_via.layers` must list the intermediate inner layers too — copper pour
- * solvers and DRC rely on it to bond (same net) or antipad (foreign net) the
- * via on each plane it crosses. Listing only `[fromLayer, toLayer]` makes
- * inner planes flood solid over foreign via barrels.
- *
- * Falls back to `[fromLayer, toLayer]` when either layer is not part of the
- * stack implied by `layerCount` (e.g. an inner layer name on a 2-layer board).
- */
 export const getViaSpanLayers = ({
   fromLayer,
   toLayer,
