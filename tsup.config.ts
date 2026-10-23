@@ -1,7 +1,9 @@
 import { defineConfig } from "tsup"
 
 export default defineConfig({
-  // Bundle the development-only copper geometry packages and their imports.
+  // tsup-node leaves package imports external by default. The copper geometry
+  // packages are devDependencies and are not installed by consumers, so bundle
+  // their runtime code and transitive imports into the published package.
   noExternal: [
     "@tscircuit/circuit-json-util",
     "@flatten-js/core",
