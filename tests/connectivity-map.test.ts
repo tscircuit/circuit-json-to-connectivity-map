@@ -32,3 +32,13 @@ test("ConnectivityMap.addConnections should add new connections correctly", () =
   expect(connectivityMap.areIdsConnected("A", "unknown2")).toBe(false)
   expect(connectivityMap.areIdsConnected("unknown1", "unknown1")).toBe(true)
 })
+
+test("ConnectivityMap.addConnections does not clobber existing sparse connectivity_net keys", () => {
+  const cm = new ConnectivityMap({ connectivity_net1: ["A", "B"] })
+  cm.addConnections([["X", "Y"]])
+
+  expect(cm.areIdsConnected("A", "B")).toBe(true)
+  expect(cm.areIdsConnected("X", "Y")).toBe(true)
+  expect(cm.areIdsConnected("A", "X")).toBe(false)
+  expect(cm.getIdsConnectedToNet("connectivity_net1")).toEqual(["A", "B"])
+})
