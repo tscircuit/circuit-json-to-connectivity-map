@@ -85,7 +85,11 @@ export class PcbConnectivityMap {
 
   private _buildTraceConnectivityMap(): ConnectivityMap {
     const connections: string[][] = []
-    const traceIds = Array.from(this.traceIdToElm.keys())
+    const { connections: copperConnections, disconnectedTraceIds } =
+      this._getCopperConnectivity()
+    const traceIds = Array.from(this.traceIdToElm.keys()).filter(
+      (id) => !disconnectedTraceIds.has(id),
+    )
 
     for (let i = 0; i < traceIds.length; i++) {
       for (let j = i + 1; j < traceIds.length; j++) {
@@ -97,25 +101,26 @@ export class PcbConnectivityMap {
       }
     }
 
-    for (const port of this.portIdToElm.values()) {
-      for (const trace of this.traceIdToElm.values()) {
-        for (const rp of trace.route) {
-          if (rp.route_type === "wire") {
-            if (rp.start_pcb_port_id === port.pcb_port_id) {
-              connections.push([port.pcb_port_id, trace.pcb_trace_id])
-            } else if (rp.end_pcb_port_id === port.pcb_port_id) {
-              connections.push([trace.pcb_trace_id, port.pcb_port_id])
-            }
+    for (const traceId of traceIds) {
+      const trace = this.traceIdToElm.get(traceId)!
+      for (const rp of trace.route) {
+        if (rp.route_type === "wire") {
+          if (rp.start_pcb_port_id) {
+            connections.push([rp.start_pcb_port_id, traceId])
+          }
+          if (rp.end_pcb_port_id) {
+            connections.push([traceId, rp.end_pcb_port_id])
           }
         }
       }
     }
 
-    connections.push(...this._getCopperConnections())
+    connections.push(...copperConnections)
     return new ConnectivityMap(findConnectedNetworks(connections))
   }
 
   addTrace(trace: PCBTrace) {
+    const isReplacement = this.traceIdToElm.has(trace.pcb_trace_id)
     this.traceIdToElm.set(trace.pcb_trace_id, trace)
     this.circuitJson = [
       ...this.circuitJson.filter(
@@ -126,22 +131,28 @@ export class PcbConnectivityMap {
       trace,
     ]
     this.copperConductorComponents = undefined
+    if (isReplacement) {
+      this.connMap = this._buildTraceConnectivityMap()
+      return
+    }
+
+    const { connections: copperConnections, disconnectedTraceIds } =
+      this._getCopperConnectivity()
     const connections: string[][] = []
-    for (const rp of trace.route) {
-      if (rp.route_type === "wire") {
-        if (rp.start_pcb_port_id) {
-          connections.push([rp.start_pcb_port_id, trace.pcb_trace_id])
-        }
-        if (rp.end_pcb_port_id) {
-          connections.push([rp.end_pcb_port_id, trace.pcb_trace_id])
+    if (!disconnectedTraceIds.has(trace.pcb_trace_id)) {
+      for (const rp of trace.route) {
+        if (rp.route_type === "wire") {
+          if (rp.start_pcb_port_id) {
+            connections.push([rp.start_pcb_port_id, trace.pcb_trace_id])
+          }
+          if (rp.end_pcb_port_id) {
+            connections.push([rp.end_pcb_port_id, trace.pcb_trace_id])
+          }
         }
       }
     }
 
-    this.connMap.addConnections([
-      ...connections,
-      ...this._getCopperConnections(),
-    ])
+    this.connMap.addConnections([...connections, ...copperConnections])
   }
 
   _arePcbTracesConnected(trace1: PCBTrace, trace2: PCBTrace): boolean {
@@ -244,17 +255,32 @@ export class PcbConnectivityMap {
     )
   }
 
-  private _getCopperConnections() {
-    return this.getCopperConductorComponents()
+  private _getCopperConnectivity() {
+    const components = this.getCopperConductorComponents()
+    const seenTraceIds = new Set<string>()
+    const disconnectedTraceIds = new Set<string>()
+    for (const conductors of components) {
+      const traceIds = new Set(
+        conductors.flatMap((c) => (c.traceId ? [c.traceId] : [])),
+      )
+      for (const traceId of traceIds) {
+        if (seenTraceIds.has(traceId)) disconnectedTraceIds.add(traceId)
+        seenTraceIds.add(traceId)
+      }
+    }
+    const connections = components
       .map((conductors) =>
         conductors.flatMap((conductor) => [
           ...(conductor.pcbPortIds ?? []),
           ...(conductor.pourId ? [conductor.pourId] : []),
           ...(conductor.viaId ? [conductor.viaId] : []),
-          ...(conductor.traceId ? [conductor.traceId] : []),
+          ...(conductor.traceId && !disconnectedTraceIds.has(conductor.traceId)
+            ? [conductor.traceId]
+            : []),
         ]),
       )
       .filter((ids) => ids.length > 0)
+    return { connections, disconnectedTraceIds }
   }
 
   /** Physical contacts use board-world points in mm (+X right, +Y up,
