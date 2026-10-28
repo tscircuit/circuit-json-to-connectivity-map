@@ -27,7 +27,6 @@ test("addTrace updates copper groups and existing map queries without mutating t
         y: 0,
         width: 0.2,
         layer: "top",
-        end_pcb_port_id: "port_2",
       },
     ],
   })

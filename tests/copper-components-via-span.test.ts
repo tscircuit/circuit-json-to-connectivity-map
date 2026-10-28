@@ -40,9 +40,14 @@ test("a route via spans inner copper layers when no standalone via exists", () =
       ],
     },
   )
+  const map = new PcbConnectivityMap(circuitJson)
+  expect(getPourPortIds(map.getCopperConductorComponents())).toEqual([
+    "port_0",
+    "port_1",
+  ])
   expect(
-    getPourPortIds(
-      new PcbConnectivityMap(circuitJson).getCopperConductorComponents(),
-    ),
-  ).toEqual(["port_0", "port_1"])
+    map
+      .getAllTracesConnectedToPort("port_0")
+      .map((trace) => trace.pcb_trace_id),
+  ).toEqual(["via_bridge"])
 })

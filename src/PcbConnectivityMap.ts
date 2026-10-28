@@ -33,6 +33,7 @@ export interface CopperConductor {
   pourId?: string
   pcbPortIds?: string[]
   viaId?: string
+  traceId?: string
 }
 
 interface CopperConductorGeometry extends CopperConductor {
@@ -250,6 +251,7 @@ export class PcbConnectivityMap {
           ...(conductor.pcbPortIds ?? []),
           ...(conductor.pourId ? [conductor.pourId] : []),
           ...(conductor.viaId ? [conductor.viaId] : []),
+          ...(conductor.traceId ? [conductor.traceId] : []),
         ]),
       )
       .filter((ids) => ids.length > 0)
@@ -380,6 +382,7 @@ export class PcbConnectivityMap {
                 }),
               netId,
               isTerminal: false,
+              traceId: element.pcb_trace_id,
             })
           }
           const next = element.route[i + 1]
@@ -409,6 +412,7 @@ export class PcbConnectivityMap {
             layers: [start.layer],
             netId,
             isTerminal: false,
+            traceId: element.pcb_trace_id,
           })
         }
       }
