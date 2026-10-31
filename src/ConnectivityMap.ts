@@ -57,7 +57,10 @@ export class ConnectivityMap {
 
       // Add all ids to the target net
       for (const id of connection) {
-        if (!this.netMap[targetNetId].includes(id)) {
+        // The reverse index is updated by the constructor and every merge.
+        // A new ID cannot already be in the target array; existing members
+        // need no linear scan of a potentially board-wide power net.
+        if (this.idToNetMap[id] !== targetNetId) {
           this.netMap[targetNetId].push(id)
         }
         this.idToNetMap[id] = targetNetId
