@@ -139,3 +139,57 @@ test("should connect a pcb via directly to its source net", () => {
 
   expect(result.areIdsConnected("pcb_via_gnd", "source_net_gnd")).toBe(true)
 })
+
+test("should handle source_component_internal_connection and multi-segment pcb_trace ports in full connectivity map", () => {
+  const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "source_component_internal_connection",
+      source_component_internal_connection_id: "scic1",
+      source_component_id: "sc1",
+      source_port_ids: ["sp1", "sp2"],
+    } as any,
+    {
+      type: "pcb_port",
+      pcb_port_id: "pcb_port_1",
+      source_port_id: "sp2",
+      x: 0,
+      y: 0,
+      pcb_component_id: "c1",
+      layers: ["top"],
+    },
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "trace_multi",
+      route: [
+        {
+          route_type: "wire",
+          x: 0,
+          y: 0,
+          width: 0.15,
+          layer: "top",
+          start_pcb_port_id: "pcb_port_1",
+          end_pcb_port_id: "pcb_port_2",
+        },
+        {
+          route_type: "wire",
+          x: 5,
+          y: 0,
+          width: 0.15,
+          layer: "top",
+          start_pcb_port_id: "pcb_port_2",
+          end_pcb_port_id: "pcb_port_3",
+        },
+      ],
+    },
+  ]
+
+  const result = getFullConnectivityMapFromCircuitJson(circuitJson)
+
+  expect(result.areIdsConnected("sp1", "sp2")).toBe(true)
+  expect(result.areIdsConnected("sp1", "pcb_port_1")).toBe(true)
+  expect(result.areIdsConnected("sp1", "pcb_port_2")).toBe(true)
+  expect(result.areIdsConnected("sp1", "pcb_port_3")).toBe(true)
+  const netId = result.getNetConnectedToId("sp1")!
+  expect(result.areIdsConnected(netId, "pcb_port_3")).toBe(true)
+  expect(result.areIdsConnected("pcb_port_3", netId)).toBe(true)
+})
