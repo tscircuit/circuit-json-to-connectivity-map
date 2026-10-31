@@ -1,7 +1,44 @@
-import type { AnyCircuitElement, PCBPort, PCBTrace } from "circuit-json"
+import type { Polygon } from "@flatten-js/core"
+import type {
+  AnyCircuitElement,
+  PCBPort,
+  PCBTrace,
+  LayerRef,
+  PcbTraceRoutePoint,
+} from "circuit-json"
+import Flatbush from "flatbush"
+import {
+  copperPolygonsTouch,
+  getPlatedHolePolygon,
+  getPourPolygon,
+  getSmtPadPolygon,
+  getTraceSegmentPolygon,
+  getViaPolygon,
+} from "@tscircuit/circuit-json-util"
+import { getFullConnectivityMapFromCircuitJson } from "./getFullConnectivityMapFromCircuitJson"
+import { getViaSpanLayers } from "./getViaSpanLayers"
 import { ConnectivityMap } from "./ConnectivityMap"
 import { doesLineIntersectLine } from "@tscircuit/math-utils"
 import { findConnectedNetworks } from "./findConnectedNetworks"
+
+// Match the pour solver's coordinate scale. Flatten's internal epsilon must
+// not collapse the sub-micron edges emitted by polygon clipping into points.
+const GEOMETRY_SCALE = 1e6
+const CONTACT_TOLERANCE = 1e-7 * GEOMETRY_SCALE
+
+export interface CopperConductor {
+  layers: LayerRef[]
+  netId: string
+  isTerminal: boolean
+  pourId?: string
+  pcbPortIds?: string[]
+  viaId?: string
+  traceId?: string
+}
+
+interface CopperConductorGeometry extends CopperConductor {
+  polygon: Polygon
+}
 
 /**
  * A PCB Connectivity Map is a connectivity map that has analyzed what traces and ports are actually connected on the
@@ -15,6 +52,7 @@ export class PcbConnectivityMap {
   traceIdToElm: Map<string, PCBTrace>
   portIdToElm: Map<string, PCBPort>
   connMap: ConnectivityMap
+  private copperConductorComponents?: CopperConductorGeometry[][]
 
   constructor(circuitJson?: AnyCircuitElement[]) {
     this.circuitJson = circuitJson || []
@@ -47,7 +85,11 @@ export class PcbConnectivityMap {
 
   private _buildTraceConnectivityMap(): ConnectivityMap {
     const connections: string[][] = []
-    const traceIds = Array.from(this.traceIdToElm.keys())
+    const { connections: copperConnections, disconnectedTraceIds } =
+      this._getCopperConnectivity()
+    const traceIds = Array.from(this.traceIdToElm.keys()).filter(
+      (id) => !disconnectedTraceIds.has(id),
+    )
 
     for (let i = 0; i < traceIds.length; i++) {
       for (let j = i + 1; j < traceIds.length; j++) {
@@ -59,38 +101,58 @@ export class PcbConnectivityMap {
       }
     }
 
-    for (const port of this.portIdToElm.values()) {
-      for (const trace of this.traceIdToElm.values()) {
-        for (const rp of trace.route) {
-          if (rp.route_type === "wire") {
-            if (rp.start_pcb_port_id === port.pcb_port_id) {
-              connections.push([port.pcb_port_id, trace.pcb_trace_id])
-            } else if (rp.end_pcb_port_id === port.pcb_port_id) {
-              connections.push([trace.pcb_trace_id, port.pcb_port_id])
-            }
+    for (const traceId of traceIds) {
+      const trace = this.traceIdToElm.get(traceId)!
+      for (const rp of trace.route) {
+        if (rp.route_type === "wire") {
+          if (rp.start_pcb_port_id) {
+            connections.push([rp.start_pcb_port_id, traceId])
+          }
+          if (rp.end_pcb_port_id) {
+            connections.push([traceId, rp.end_pcb_port_id])
           }
         }
       }
     }
 
+    connections.push(...copperConnections)
     return new ConnectivityMap(findConnectedNetworks(connections))
   }
 
   addTrace(trace: PCBTrace) {
+    const isReplacement = this.traceIdToElm.has(trace.pcb_trace_id)
     this.traceIdToElm.set(trace.pcb_trace_id, trace)
+    this.circuitJson = [
+      ...this.circuitJson.filter(
+        (element) =>
+          element.type !== "pcb_trace" ||
+          element.pcb_trace_id !== trace.pcb_trace_id,
+      ),
+      trace,
+    ]
+    this.copperConductorComponents = undefined
+    if (isReplacement) {
+      this.connMap = this._buildTraceConnectivityMap()
+      return
+    }
+
+    const { connections: copperConnections, disconnectedTraceIds } =
+      this._getCopperConnectivity()
     const connections: string[][] = []
-    for (const rp of trace.route) {
-      if (rp.route_type === "wire") {
-        if (rp.start_pcb_port_id) {
-          connections.push([rp.start_pcb_port_id, trace.pcb_trace_id])
-        }
-        if (rp.end_pcb_port_id) {
-          connections.push([rp.end_pcb_port_id, trace.pcb_trace_id])
+    if (!disconnectedTraceIds.has(trace.pcb_trace_id)) {
+      for (const rp of trace.route) {
+        if (rp.route_type === "wire") {
+          if (rp.start_pcb_port_id) {
+            connections.push([rp.start_pcb_port_id, trace.pcb_trace_id])
+          }
+          if (rp.end_pcb_port_id) {
+            connections.push([rp.end_pcb_port_id, trace.pcb_trace_id])
+          }
         }
       }
     }
 
-    this.connMap.addConnections(connections)
+    this.connMap.addConnections([...connections, ...copperConnections])
   }
 
   _arePcbTracesConnected(trace1: PCBTrace, trace2: PCBTrace): boolean {
@@ -173,5 +235,278 @@ export class PcbConnectivityMap {
           .filter((id) => this.traceIdToElm.has(id))
           .map((id) => this.traceIdToElm.get(id) as PCBTrace)
       : []
+  }
+
+  /** Same-net copper groups, including pour, via, and terminal IDs.
+   * Polygon geometry remains internal. Generated stitching vias still conduct
+   * copper, but callers can exclude them from authored terminal anchors.
+   */
+  getCopperConductorComponents(
+    generatedStitchingViaIds: ReadonlySet<string> = new Set(),
+  ): CopperConductor[][] {
+    this.copperConductorComponents ??= this._buildCopperConductorComponents()
+    return this.copperConductorComponents.map((conductors) =>
+      conductors.map(({ polygon, ...conductor }) => ({
+        ...conductor,
+        isTerminal:
+          conductor.isTerminal &&
+          !(conductor.viaId && generatedStitchingViaIds.has(conductor.viaId)),
+      })),
+    )
+  }
+
+  private _getCopperConnectivity() {
+    const components = this.getCopperConductorComponents()
+    const seenTraceIds = new Set<string>()
+    const disconnectedTraceIds = new Set<string>()
+    for (const conductors of components) {
+      const traceIds = new Set(
+        conductors.flatMap((c) => (c.traceId ? [c.traceId] : [])),
+      )
+      for (const traceId of traceIds) {
+        if (seenTraceIds.has(traceId)) disconnectedTraceIds.add(traceId)
+        seenTraceIds.add(traceId)
+      }
+    }
+    const connections = components
+      .map((conductors) =>
+        conductors.flatMap((conductor) => [
+          ...(conductor.pcbPortIds ?? []),
+          ...(conductor.pourId ? [conductor.pourId] : []),
+          ...(conductor.viaId ? [conductor.viaId] : []),
+          ...(conductor.traceId && !disconnectedTraceIds.has(conductor.traceId)
+            ? [conductor.traceId]
+            : []),
+        ]),
+      )
+      .filter((ids) => ids.length > 0)
+    return { connections, disconnectedTraceIds }
+  }
+
+  /** Physical contacts use board-world points in mm (+X right, +Y up,
+   * +Z toward top, right-handed), scaled internally for robust predicates.
+   * Net membership only permits a contact; it never creates a physical edge.
+   * Trace segments remain separate, and only plated barrels bridge layers.
+   */
+  private _buildCopperConductorComponents(): CopperConductorGeometry[][] {
+    const circuitJson = this.circuitJson
+    const pours = circuitJson.filter((e) => e.type === "pcb_copper_pour")
+    if (pours.length === 0) return []
+    const connectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
+    const pouredNets = new Set(
+      pours.flatMap((pour) =>
+        pour.source_net_id
+          ? [
+              connectivity.getNetConnectedToId(pour.source_net_id) ??
+                pour.source_net_id,
+            ]
+          : [],
+      ),
+    )
+    const conductors: CopperConductorGeometry[] = []
+    const add = (conductor: CopperConductorGeometry) => {
+      if (pouredNets.has(conductor.netId) && !conductor.polygon.isEmpty())
+        conductors.push({
+          ...conductor,
+          polygon: conductor.polygon.scale(GEOMETRY_SCALE, GEOMETRY_SCALE),
+        })
+    }
+    const components = new Map(
+      circuitJson
+        .filter((e) => e.type === "pcb_component")
+        .map((e) => [e.pcb_component_id, e]),
+    )
+    const vias = circuitJson.filter((e) => e.type === "pcb_via")
+    const board = circuitJson.find((e) => e.type === "pcb_board")
+
+    for (const pour of pours) {
+      if (!pour.source_net_id) continue // Unassigned decorative copper has no target net to validate.
+      add({
+        polygon: getPourPolygon(pour),
+        layers: [pour.layer],
+        netId:
+          connectivity.getNetConnectedToId(pour.source_net_id) ??
+          pour.source_net_id,
+        isTerminal: false,
+        pourId: pour.pcb_copper_pour_id,
+      })
+    }
+    for (const element of circuitJson) {
+      if (element.type === "pcb_smtpad") {
+        const netId = connectivity.getNetConnectedToId(element.pcb_smtpad_id)
+        if (netId && pouredNets.has(netId))
+          add({
+            polygon: getSmtPadPolygon(element),
+            layers: [element.layer],
+            netId,
+            isTerminal: !!element.pcb_port_id,
+            pcbPortIds: element.pcb_port_id ? [element.pcb_port_id] : [],
+          })
+      } else if (element.type === "pcb_plated_hole") {
+        const netId = connectivity.getNetConnectedToId(
+          element.pcb_plated_hole_id,
+        )
+        if (netId && pouredNets.has(netId))
+          add({
+            polygon: getPlatedHolePolygon(
+              element,
+              element.pcb_component_id
+                ? components.get(element.pcb_component_id)?.rotation
+                : 0,
+            ),
+            layers: element.layers,
+            netId,
+            isTerminal: !!element.pcb_port_id,
+            pcbPortIds: element.pcb_port_id ? [element.pcb_port_id] : [],
+          })
+      } else if (element.type === "pcb_via") {
+        const netId = connectivity.getNetConnectedToId(element.pcb_via_id)
+        if (netId && pouredNets.has(netId))
+          add({
+            polygon: getViaPolygon(
+              element,
+              element.outer_diameter,
+              element.hole_diameter,
+            ),
+            layers: element.layers,
+            netId,
+            isTerminal: true,
+            viaId: element.pcb_via_id,
+            pcbPortIds: element.pcb_port_ids,
+          })
+      } else if (element.type === "pcb_trace") {
+        const netId = connectivity.getNetConnectedToId(element.pcb_trace_id)
+        if (!netId || !pouredNets.has(netId)) continue
+        for (let i = 0; i < element.route.length; i++) {
+          const routePoint = element.route[i]!
+          if (routePoint.route_type === "via") {
+            const actualVia = vias.find(
+              (via) =>
+                via.x === routePoint.x &&
+                via.y === routePoint.y &&
+                via.layers.includes(routePoint.from_layer) &&
+                via.layers.includes(routePoint.to_layer),
+            )
+            add({
+              polygon: getViaPolygon(
+                routePoint,
+                actualVia?.outer_diameter ??
+                  routePoint.outer_diameter ??
+                  board?.min_via_pad_diameter ??
+                  0.3,
+                actualVia?.hole_diameter ??
+                  routePoint.hole_diameter ??
+                  board?.min_via_hole_diameter ??
+                  0.2,
+              ),
+              layers:
+                actualVia?.layers ??
+                getViaSpanLayers({
+                  fromLayer: routePoint.from_layer,
+                  toLayer: routePoint.to_layer,
+                  layerCount: board?.num_layers ?? 2,
+                }),
+              netId,
+              isTerminal: false,
+              traceId: element.pcb_trace_id,
+            })
+          }
+          const next = element.route[i + 1]
+          if (!next) continue
+          const start = this._getRouteEndpoint(routePoint, "end")
+          const end = this._getRouteEndpoint(next, "start")
+          if (start.layer !== end.layer) continue
+          const startWidth =
+            routePoint.route_type === "via"
+              ? next.route_type === "via"
+                ? undefined
+                : next.width
+              : routePoint.width
+          if (startWidth === undefined) continue
+          const endWidth =
+            element.route_thickness_mode === "interpolated" &&
+            next.route_type !== "via"
+              ? next.width
+              : startWidth
+          add({
+            polygon: getTraceSegmentPolygon(
+              start.point,
+              end.point,
+              startWidth,
+              endWidth,
+            ),
+            layers: [start.layer],
+            netId,
+            isTerminal: false,
+            traceId: element.pcb_trace_id,
+          })
+        }
+      }
+    }
+
+    if (conductors.length === 0) return []
+    const parent = conductors.map((_, i) => i)
+    const find = (i: number): number => {
+      while (parent[i] !== i) {
+        parent[i] = parent[parent[i]!]!
+        i = parent[i]!
+      }
+      return i
+    }
+    const bounds = conductors.map((conductor) => conductor.polygon.box)
+    const spatialIndex = new Flatbush(conductors.length)
+    for (const box of bounds)
+      spatialIndex.add(box.xmin, box.ymin, box.xmax, box.ymax)
+    spatialIndex.finish()
+    for (const [i, conductor] of conductors.entries()) {
+      const box = bounds[i]!
+      for (const j of spatialIndex.search(
+        box.xmin - CONTACT_TOLERANCE,
+        box.ymin - CONTACT_TOLERANCE,
+        box.xmax + CONTACT_TOLERANCE,
+        box.ymax + CONTACT_TOLERANCE,
+      )) {
+        if (j <= i || find(i) === find(j)) continue
+        const neighbor = conductors[j]!
+        if (
+          conductor.netId !== neighbor.netId ||
+          !conductor.layers.some((layer) => neighbor.layers.includes(layer))
+        )
+          continue
+        if (
+          copperPolygonsTouch(
+            conductor.polygon,
+            neighbor.polygon,
+            CONTACT_TOLERANCE,
+          )
+        )
+          parent[find(j)] = find(i)
+      }
+    }
+    const conductorsByRoot = new Map<number, CopperConductorGeometry[]>()
+    for (const [index, conductor] of conductors.entries()) {
+      const root = find(index)
+      const connectedConductors = conductorsByRoot.get(root)
+      if (connectedConductors) connectedConductors.push(conductor)
+      else conductorsByRoot.set(root, [conductor])
+    }
+    return [...conductorsByRoot.values()]
+  }
+
+  private _getRouteEndpoint(
+    routePoint: PcbTraceRoutePoint,
+    side: "start" | "end",
+  ) {
+    if (routePoint.route_type === "wire")
+      return { point: routePoint, layer: routePoint.layer }
+    if (routePoint.route_type === "via")
+      return {
+        point: routePoint,
+        layer: side === "start" ? routePoint.from_layer : routePoint.to_layer,
+      }
+    return {
+      point: routePoint[side],
+      layer: side === "start" ? routePoint.start_layer : routePoint.end_layer,
+    }
   }
 }
