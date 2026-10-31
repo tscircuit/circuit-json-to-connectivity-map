@@ -78,11 +78,18 @@ export class ConnectivityMap {
 
   areIdsConnected(id1: string, id2: string): boolean {
     if (id1 === id2) return true
-    const netId1 = this.getNetConnectedToId(id1)
+    const netId1 =
+      this.getNetConnectedToId(id1) ?? (this.netMap[id1] ? id1 : undefined)
     if (!netId1) return false
-    const netId2 = this.getNetConnectedToId(id2)
+    const netId2 =
+      this.getNetConnectedToId(id2) ?? (this.netMap[id2] ? id2 : undefined)
     if (!netId2) return false
-    return netId1 === netId2 || netId2 === id1 || netId2 === id1
+    return (
+      netId1 === netId2 ||
+      netId2 === id1 ||
+      netId1 === id2 ||
+      this.netMap[netId1] === this.netMap[netId2]
+    )
   }
 
   areAllIdsConnected(ids: string[]): boolean {

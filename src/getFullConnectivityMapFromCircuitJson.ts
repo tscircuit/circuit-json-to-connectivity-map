@@ -42,15 +42,19 @@ export const getFullConnectivityMapFromCircuitJson = (
         connections.push([pcb_trace_id, source_trace_id])
       }
       if (Array.isArray(route)) {
-        const startId = route.find(
-          (rp) => rp?.start_pcb_port_id,
-        )?.start_pcb_port_id
-        const endId = route.find((rp) => rp?.end_pcb_port_id)?.end_pcb_port_id
-        if (startId && pcb_trace_id) {
-          connections.push([startId, pcb_trace_id])
-        }
-        if (pcb_trace_id && endId) {
-          connections.push([pcb_trace_id, endId])
+        const connectedStartIds = new Set<string>()
+        const connectedEndIds = new Set<string>()
+        for (const rp of route) {
+          const startId = rp?.start_pcb_port_id
+          if (startId && pcb_trace_id && !connectedStartIds.has(startId)) {
+            connectedStartIds.add(startId)
+            connections.push([startId, pcb_trace_id])
+          }
+          const endId = rp?.end_pcb_port_id
+          if (pcb_trace_id && endId && !connectedEndIds.has(endId)) {
+            connectedEndIds.add(endId)
+            connections.push([pcb_trace_id, endId])
+          }
         }
       }
     } else if (element.type === "pcb_via") {
@@ -71,6 +75,8 @@ export const getFullConnectivityMapFromCircuitJson = (
           connections.push(portGroup)
         }
       }
+    } else if (element.type === "source_component_internal_connection") {
+      connections.push(element.source_port_ids)
     }
   }
 
