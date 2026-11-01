@@ -43,11 +43,16 @@ export class ConnectivityMap {
           `connectivity_net${Object.keys(this.netMap).length}`
         for (const netId of existingNets) {
           if (netId !== targetNetId) {
-            this.netMap[targetNetId].push(...this.netMap[netId])
+            const mergedNet = this.netMap[netId]
+            this.netMap[targetNetId].push(...mergedNet)
 
-            // we could delete the net, but setting it to reference the other net
-            // will make sure any usage of the old netId will still work
-            this.netMap[netId] = this.netMap[targetNetId]
+            // Preserve every historical alias when an already-merged net is
+            // absorbed, so future additions remain visible through old net IDs.
+            for (const [aliasNetId, ids] of Object.entries(this.netMap)) {
+              if (ids === mergedNet) {
+                this.netMap[aliasNetId] = this.netMap[targetNetId]
+              }
+            }
             for (const id of this.netMap[targetNetId]) {
               this.idToNetMap[id] = targetNetId
             }
