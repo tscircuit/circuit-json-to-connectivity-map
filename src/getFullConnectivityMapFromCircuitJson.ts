@@ -71,6 +71,8 @@ export const getFullConnectivityMapFromCircuitJson = (
           connections.push(portGroup)
         }
       }
+    } else if (element.type === "source_component_internal_connection") {
+      connections.push(element.source_port_ids)
     }
   }
 
