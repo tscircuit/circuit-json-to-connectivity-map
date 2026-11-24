@@ -45,24 +45,15 @@ const circuitJson: AnyCircuitElement[] = [
   },
 ]
 
-test("connects a trace without a source trace ID through its vias' bottom ports", () => {
+test("an unowned trace does not inherit desired connectivity through via ports", () => {
   const map = getFullConnectivityMapFromCircuitJson(circuitJson)
 
-  expect(
-    map.areAllIdsConnected([
-      "gnd",
-      "via_0",
-      "via_1",
-      "top_0",
-      "top_1",
-      "bottom_0",
-      "bottom_1",
-      "bottom_trace",
-    ]),
-  ).toBe(true)
+  expect(map.areAllIdsConnected(["gnd", "via_0", "via_1"])).toBe(true)
+  expect(map.getNetConnectedToId("bottom_trace")).toBeUndefined()
+  expect(map.areIdsConnected("bottom_0", "gnd")).toBe(false)
 })
 
-test("connects a via's ports even without source or trace metadata", () => {
+test("via port references alone do not declare desired connectivity", () => {
   const via: AnyCircuitElement = {
     type: "pcb_via",
     pcb_via_id: "isolated_via",
@@ -77,7 +68,7 @@ test("connects a via's ports even without source or trace metadata", () => {
 
   expect(
     map.areAllIdsConnected(["isolated_via", "isolated_top", "isolated_bottom"]),
-  ).toBe(true)
+  ).toBe(false)
 })
 
 test("does not infer trace identity from physical overlap with vias", () => {
@@ -112,12 +103,6 @@ test("keeps an overlapping different-net via separate", () => {
 
   expect(map.areIdsConnected("signal_via", "bottom_trace")).toBe(false)
   expect(map.areIdsConnected("signal_bottom", "gnd")).toBe(false)
-  expect(
-    map.areAllIdsConnected([
-      "signal_via",
-      "signal_net",
-      "signal_top",
-      "signal_bottom",
-    ]),
-  ).toBe(true)
+  expect(map.areAllIdsConnected(["signal_via", "signal_net"])).toBe(true)
+  expect(map.areIdsConnected("signal_top", "signal_net")).toBe(false)
 })

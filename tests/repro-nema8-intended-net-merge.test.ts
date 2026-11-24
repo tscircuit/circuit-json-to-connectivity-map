@@ -8,7 +8,7 @@ import {
   getSourcePortConnectivityMapFromCircuitJson,
 } from "../src"
 
-test("the full NEMA8 board merges VM and GND through a PCB endpoint", () => {
+test("the full NEMA8 board keeps VM and GND separate despite a conflicting PCB endpoint", () => {
   const bytes = gunzipSync(
     readFileSync(
       new URL("./fixtures/nema8-controller/circuit.json.gz", import.meta.url),
@@ -28,10 +28,13 @@ test("the full NEMA8 board merges VM and GND through a PCB endpoint", () => {
   ).toBe(false)
 
   const fullConnectivity = getFullConnectivityMapFromCircuitJson(circuitJson)
+  for (const [netId, ids] of Object.entries(fullConnectivity.netMap)) {
+    expect(fullConnectivity.getNetConnectedToId(ids[0])).toBe(netId)
+  }
   expect(
     fullConnectivity.areIdsConnected("source_port_155", "source_port_150"),
-  ).toBe(true)
+  ).toBe(false)
   expect(
     fullConnectivity.areIdsConnected("source_trace_8", "pcb_port_150"),
-  ).toBe(true)
+  ).toBe(false)
 })

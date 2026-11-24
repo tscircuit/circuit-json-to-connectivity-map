@@ -2,8 +2,20 @@ import { expect, test } from "bun:test"
 import type { AnyCircuitElement } from "circuit-json"
 import { getFullConnectivityMapFromCircuitJson } from "../src/getFullConnectivityMapFromCircuitJson"
 
-test("connects one-ended T113 fanout traces to their PCB ports", () => {
+test("one-ended T113 fanout traces keep their declared source connections", () => {
   const circuitJson: AnyCircuitElement[] = [
+    {
+      type: "source_trace",
+      source_trace_id: "breakout:pcb_breakout_point_33",
+      connected_source_port_ids: ["source_port_63"],
+      connected_source_net_ids: [],
+    },
+    {
+      type: "source_trace",
+      source_trace_id: "breakout:pcb_breakout_point_38",
+      connected_source_port_ids: ["source_port_79"],
+      connected_source_net_ids: [],
+    },
     {
       type: "pcb_port",
       pcb_port_id: "pcb_port_63",
