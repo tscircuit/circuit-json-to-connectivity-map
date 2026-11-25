@@ -60,6 +60,7 @@ test("only a jumper's declared internal connection can own its footprint copper"
       height: 3,
       layer: "top",
       rotation: 0,
+      obstructs_within_bounds: true,
     },
     {
       type: "pcb_port",

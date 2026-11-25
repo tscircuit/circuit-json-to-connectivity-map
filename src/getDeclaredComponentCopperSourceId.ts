@@ -1,12 +1,21 @@
-import type { AnyCircuitElement, PcbTrace, PcbVia } from "circuit-json"
+import type {
+  AnyCircuitElement,
+  PcbPort,
+  PcbTrace,
+  PcbVia,
+  SourcePort,
+} from "circuit-json"
 
-function getSourcePort(circuitJson: AnyCircuitElement[], pcbPortId: string) {
+function getSourcePort(
+  circuitJson: AnyCircuitElement[],
+  pcbPortId: PcbPort["pcb_port_id"],
+) {
   const pcbPort = circuitJson.find(
     (port) => port.type === "pcb_port" && port.pcb_port_id === pcbPortId,
   )
   if (pcbPort?.type !== "pcb_port") return undefined
   return circuitJson.find(
-    (port) =>
+    (port): port is SourcePort =>
       port.type === "source_port" &&
       port.source_port_id === pcbPort.source_port_id,
   )
@@ -29,7 +38,7 @@ export function getDeclaredComponentCopperSourceId(
         )
   if (pcbPortIds.length < 2) return undefined
   const sourcePorts = pcbPortIds.map((id) => getSourcePort(circuitJson, id))
-  if (sourcePorts.some((port) => port?.type !== "source_port")) return undefined
+  if (sourcePorts.some((port) => !port)) return undefined
   const sourceComponentId = sourcePorts[0]?.source_component_id
   if (
     !sourceComponentId ||

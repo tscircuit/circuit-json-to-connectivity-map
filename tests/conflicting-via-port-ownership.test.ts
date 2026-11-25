@@ -5,6 +5,30 @@ import { getFullConnectivityMapFromCircuitJson } from "../src"
 test("via port references cannot overwrite the ports' intended source ownership", () => {
   const circuitJson: AnyCircuitElement[] = [
     {
+      type: "source_manually_placed_via",
+      source_manually_placed_via_id: "vm_via_source",
+      source_group_id: "board",
+      source_trace_id: "vm_trace",
+    },
+    {
+      type: "source_manually_placed_via",
+      source_manually_placed_via_id: "gnd_via_source",
+      source_group_id: "board",
+      source_trace_id: "gnd_trace",
+    },
+    {
+      type: "source_port",
+      source_port_id: "vm_port",
+      source_component_id: "vm_via_source",
+      name: "top",
+    },
+    {
+      type: "source_port",
+      source_port_id: "gnd_port",
+      source_component_id: "gnd_via_source",
+      name: "bottom",
+    },
+    {
       type: "pcb_via",
       pcb_via_id: "via",
       pcb_port_ids: ["pcb_vm", "pcb_gnd"],
