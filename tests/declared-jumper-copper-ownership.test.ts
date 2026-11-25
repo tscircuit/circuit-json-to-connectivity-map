@@ -107,6 +107,11 @@ test("only a jumper's declared internal connection can own its footprint copper"
       pcb_trace_id: "other_component_bridge",
       pcb_component_id: "other_component",
     },
+    {
+      ...bridge,
+      pcb_trace_id: "repeated_port_bridge",
+      route: [bridge.route[0], bridge.route[0]],
+    },
   ]
 
   for (const orderedCircuit of [circuitJson, circuitJson.toReversed()]) {
@@ -116,6 +121,7 @@ test("only a jumper's declared internal connection can own its footprint copper"
     ).toBe(true)
     expect(connMap.areIdsConnected("bridge", "pin3")).toBe(false)
     expect(connMap.getNetConnectedToId("wrong_bridge")).toBeUndefined()
+    expect(connMap.getNetConnectedToId("repeated_port_bridge")).toBeUndefined()
     expect(
       connMap.getNetConnectedToId("other_component_bridge"),
     ).toBeUndefined()

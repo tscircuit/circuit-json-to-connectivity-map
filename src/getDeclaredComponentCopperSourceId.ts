@@ -1,30 +1,19 @@
-import type {
-  AnyCircuitElement,
-  PcbPort,
-  PcbTrace,
-  PcbVia,
-  SourcePort,
-} from "circuit-json"
+import type { CircuitJsonUtilObjects } from "@tscircuit/circuit-json-util"
+import type { PcbPort, PcbTrace, PcbVia } from "circuit-json"
 
 function getSourcePort(
-  circuitJson: AnyCircuitElement[],
+  db: CircuitJsonUtilObjects,
   pcbPortId: PcbPort["pcb_port_id"],
 ) {
-  const pcbPort = circuitJson.find(
-    (port) => port.type === "pcb_port" && port.pcb_port_id === pcbPortId,
-  )
-  if (pcbPort?.type !== "pcb_port") return undefined
-  return circuitJson.find(
-    (port): port is SourcePort =>
-      port.type === "source_port" &&
-      port.source_port_id === pcbPort.source_port_id,
-  )
+  const pcbPort = db.pcb_port.get(pcbPortId)
+  if (!pcbPort) return undefined
+  return db.source_port.get(pcbPort.source_port_id)
 }
 
 /** Attach component copper only to an existing declared internal connection. */
 export function getDeclaredComponentCopperSourceId(
-  circuitJson: AnyCircuitElement[],
   copper: PcbTrace | PcbVia,
+  db: CircuitJsonUtilObjects,
 ) {
   const pcbPortIds =
     copper.type === "pcb_via"
@@ -36,8 +25,9 @@ export function getDeclaredComponentCopperSourceId(
               )
             : [],
         )
-  if (pcbPortIds.length < 2) return undefined
-  const sourcePorts = pcbPortIds.map((id) => getSourcePort(circuitJson, id))
+  const distinctPcbPortIds = [...new Set(pcbPortIds)]
+  if (distinctPcbPortIds.length < 2) return undefined
+  const sourcePorts = distinctPcbPortIds.map((id) => getSourcePort(db, id))
   if (sourcePorts.some((port) => !port)) return undefined
   const sourceComponentId = sourcePorts[0]?.source_component_id
   if (
@@ -47,33 +37,20 @@ export function getDeclaredComponentCopperSourceId(
     return undefined
 
   if (copper.type === "pcb_via") {
-    const sourceVia = circuitJson.find(
-      (via) =>
-        via.type === "source_manually_placed_via" &&
-        via.source_manually_placed_via_id === sourceComponentId,
-    )
-    if (sourceVia?.type === "source_manually_placed_via")
-      return sourceVia.source_manually_placed_via_id
-    return undefined
+    return db.source_manually_placed_via.get(sourceComponentId)
+      ?.source_manually_placed_via_id
   }
 
-  const pcbComponent = circuitJson.find(
-    (component) =>
-      component.type === "pcb_component" &&
-      component.pcb_component_id === copper.pcb_component_id &&
-      component.source_component_id === sourceComponentId,
-  )
-  if (!pcbComponent) return undefined
-  const internalConnection = circuitJson.find(
-    (connection) =>
-      connection.type === "source_component_internal_connection" &&
-      connection.source_component_id === sourceComponentId &&
+  if (!copper.pcb_component_id) return undefined
+  const pcbComponent = db.pcb_component.get(copper.pcb_component_id)
+  if (pcbComponent?.source_component_id !== sourceComponentId) return undefined
+  const internalConnection = db.source_component_internal_connection
+    .list({ source_component_id: sourceComponentId })
+    .find((connection) =>
       sourcePorts.every(
         (port) =>
           port && connection.source_port_ids.includes(port.source_port_id),
       ),
-  )
-  if (internalConnection?.type === "source_component_internal_connection")
-    return internalConnection.source_component_internal_connection_id
-  return undefined
+    )
+  return internalConnection?.source_component_internal_connection_id
 }

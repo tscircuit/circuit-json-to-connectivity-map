@@ -1,4 +1,5 @@
 import type { AnyCircuitElement } from "circuit-json"
+import { cjuIndexed } from "@tscircuit/circuit-json-util"
 import { ConnectivityMap } from "./ConnectivityMap"
 import { findConnectedNetworks } from "./findConnectedNetworks"
 import { getDeclaredComponentCopperSourceId } from "./getDeclaredComponentCopperSourceId"
@@ -11,6 +12,9 @@ export const getFullConnectivityMapFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
 ) => {
   const connections: string[][] = []
+  const db = cjuIndexed([...circuitJson], {
+    indexConfig: { byId: true, byType: true },
+  })
 
   for (const element of circuitJson) {
     switch (element.type) {
@@ -39,13 +43,9 @@ export const getFullConnectivityMapFromCircuitJson = (
         ])
         break
       case "source_manually_placed_via": {
-        const sourcePortIds = circuitJson.flatMap((sourcePort) =>
-          sourcePort.type === "source_port" &&
-          sourcePort.source_component_id ===
-            element.source_manually_placed_via_id
-            ? [sourcePort.source_port_id]
-            : [],
-        )
+        const sourcePortIds = db.source_port
+          .list({ source_component_id: element.source_manually_placed_via_id })
+          .map((port) => port.source_port_id)
         connections.push(
           [
             element.source_manually_placed_via_id,
@@ -71,7 +71,7 @@ export const getFullConnectivityMapFromCircuitJson = (
       case "pcb_trace": {
         const sourceOwnerId =
           element.source_trace_id ??
-          getDeclaredComponentCopperSourceId(circuitJson, element)
+          getDeclaredComponentCopperSourceId(element, db)
         if (sourceOwnerId)
           connections.push([element.pcb_trace_id, sourceOwnerId])
         break
@@ -81,7 +81,7 @@ export const getFullConnectivityMapFromCircuitJson = (
           element.source_trace_id ??
           element.source_net_id ??
           element.pcb_trace_id ??
-          getDeclaredComponentCopperSourceId(circuitJson, element)
+          getDeclaredComponentCopperSourceId(element, db)
         if (sourceOwnerId) connections.push([element.pcb_via_id, sourceOwnerId])
         break
       }
