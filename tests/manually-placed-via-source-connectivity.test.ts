@@ -47,6 +47,7 @@ test("a manually placed via's declared source net owns its layer ports", () => {
     {
       type: "pcb_via",
       pcb_via_id: "via",
+      source_manually_placed_via_id: "via_source",
       pcb_port_ids: ["pcb_top", "pcb_bottom"],
       x: 0,
       y: 0,
