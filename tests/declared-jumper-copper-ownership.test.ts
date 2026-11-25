@@ -7,7 +7,6 @@ test("only a jumper's declared internal connection can own its footprint copper"
     type: "pcb_trace",
     pcb_trace_id: "bridge",
     pcb_component_id: "JP1_pcb",
-    source_component_internal_connection_id: "JP1_bridge",
     route: [
       {
         route_type: "wire",
@@ -105,14 +104,8 @@ test("only a jumper's declared internal connection can own its footprint copper"
     },
     {
       ...bridge,
-      pcb_trace_id: "unowned_bridge",
-      source_component_internal_connection_id: undefined,
-    },
-    {
-      ...bridge,
-      pcb_trace_id: "repeated_port_bridge",
-      source_component_internal_connection_id: undefined,
-      route: [bridge.route[0], bridge.route[0]],
+      pcb_trace_id: "other_component_bridge",
+      pcb_component_id: "other_component",
     },
   ]
 
@@ -122,9 +115,9 @@ test("only a jumper's declared internal connection can own its footprint copper"
       connMap.areAllIdsConnected(["JP1_bridge", "bridge", "pin1", "pin2"]),
     ).toBe(true)
     expect(connMap.areIdsConnected("bridge", "pin3")).toBe(false)
-    expect(connMap.areIdsConnected("wrong_bridge", "JP1_bridge")).toBe(true)
-    expect(connMap.areIdsConnected("wrong_bridge", "pin3")).toBe(false)
-    expect(connMap.getNetConnectedToId("repeated_port_bridge")).toBeUndefined()
-    expect(connMap.getNetConnectedToId("unowned_bridge")).toBeUndefined()
+    expect(connMap.getNetConnectedToId("wrong_bridge")).toBeUndefined()
+    expect(
+      connMap.getNetConnectedToId("other_component_bridge"),
+    ).toBeUndefined()
   }
 })

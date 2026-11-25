@@ -1,9 +1,7 @@
-import type { AnyCircuitElement, SourcePort } from "circuit-json"
+import type { AnyCircuitElement } from "circuit-json"
 import { ConnectivityMap } from "./ConnectivityMap"
 import { findConnectedNetworks } from "./findConnectedNetworks"
-
-type SourceComponentId = SourcePort["source_component_id"]
-type SourcePortId = SourcePort["source_port_id"]
+import { getDeclaredComponentCopperSourceId } from "./getDeclaredComponentCopperSourceId"
 
 /**
  * Desired connectivity comes from source declarations. PCB objects are aliases
@@ -13,14 +11,6 @@ export const getFullConnectivityMapFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
 ) => {
   const connections: string[][] = []
-  const sourcePortIdsByComponent = new Map<SourceComponentId, SourcePortId[]>()
-  for (const element of circuitJson) {
-    if (element.type !== "source_port") continue
-    const sourcePortIds =
-      sourcePortIdsByComponent.get(element.source_component_id) ?? []
-    sourcePortIds.push(element.source_port_id)
-    sourcePortIdsByComponent.set(element.source_component_id, sourcePortIds)
-  }
 
   for (const element of circuitJson) {
     switch (element.type) {
@@ -49,9 +39,13 @@ export const getFullConnectivityMapFromCircuitJson = (
         ])
         break
       case "source_manually_placed_via": {
-        const sourcePortIds =
-          sourcePortIdsByComponent.get(element.source_manually_placed_via_id) ??
-          []
+        const sourcePortIds = circuitJson.flatMap((sourcePort) =>
+          sourcePort.type === "source_port" &&
+          sourcePort.source_component_id ===
+            element.source_manually_placed_via_id
+            ? [sourcePort.source_port_id]
+            : [],
+        )
         connections.push(
           [
             element.source_manually_placed_via_id,
@@ -77,7 +71,7 @@ export const getFullConnectivityMapFromCircuitJson = (
       case "pcb_trace": {
         const sourceOwnerId =
           element.source_trace_id ??
-          element.source_component_internal_connection_id
+          getDeclaredComponentCopperSourceId(circuitJson, element)
         if (sourceOwnerId)
           connections.push([element.pcb_trace_id, sourceOwnerId])
         break
@@ -86,8 +80,8 @@ export const getFullConnectivityMapFromCircuitJson = (
         const sourceOwnerId =
           element.source_trace_id ??
           element.source_net_id ??
-          element.source_manually_placed_via_id ??
-          element.pcb_trace_id
+          element.pcb_trace_id ??
+          getDeclaredComponentCopperSourceId(circuitJson, element)
         if (sourceOwnerId) connections.push([element.pcb_via_id, sourceOwnerId])
         break
       }
