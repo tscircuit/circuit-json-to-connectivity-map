@@ -1,80 +1,82 @@
-import type { AnyCircuitElement, PcbTraceRoutePoint } from "circuit-json"
-import { findConnectedNetworks } from "./findConnectedNetworks"
+import type { AnyCircuitElement } from "circuit-json"
 import { ConnectivityMap } from "./ConnectivityMap"
+import { findConnectedNetworks } from "./findConnectedNetworks"
 
+/**
+ * Desired connectivity comes from source declarations. PCB objects are aliases
+ * of their declared owners; route endpoints and physical contact add no edges.
+ */
 export const getFullConnectivityMapFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
 ) => {
   const connections: string[][] = []
 
   for (const element of circuitJson) {
-    if (element.type === "source_trace") {
-      connections.push(
-        [
+    switch (element.type) {
+      case "source_trace":
+        connections.push([
           element.source_trace_id,
           ...(element.connected_source_port_ids ?? []),
           ...(element.connected_source_net_ids ?? []),
-        ].filter(Boolean),
-      )
-    } else if (element.type === "pcb_port") {
-      const { pcb_port_id, source_port_id } = element
-      if (source_port_id && pcb_port_id) {
-        connections.push([source_port_id, pcb_port_id])
+        ])
+        break
+      case "source_port":
+        connections.push([element.source_port_id])
+        break
+      case "source_net":
+        connections.push([element.source_net_id])
+        break
+      case "source_component":
+        connections.push(
+          ...(element.internally_connected_source_port_ids ?? []),
+        )
+        break
+      case "source_component_internal_connection":
+        connections.push(element.source_port_ids)
+        break
+      case "source_manually_placed_via": {
+        const sourcePortIds = circuitJson.flatMap((sourcePort) =>
+          sourcePort.type === "source_port" &&
+          sourcePort.source_component_id ===
+            element.source_manually_placed_via_id
+            ? [sourcePort.source_port_id]
+            : [],
+        )
+        connections.push(
+          [
+            ...sourcePortIds,
+            element.source_net_id,
+            element.source_trace_id,
+          ].filter((id): id is string => Boolean(id)),
+        )
+        break
       }
-    } else if (element.type === "pcb_smtpad") {
-      const { pcb_smtpad_id, pcb_port_id } = element
-      if (pcb_port_id && pcb_smtpad_id) {
-        connections.push([pcb_smtpad_id, pcb_port_id])
-      }
-    } else if (element.type === "pcb_plated_hole") {
-      const { pcb_plated_hole_id, pcb_port_id } = element
-      if (pcb_port_id && pcb_plated_hole_id) {
-        connections.push([pcb_plated_hole_id, pcb_port_id])
-      }
-    } else if (element.type === "pcb_trace") {
-      const { pcb_trace_id, source_trace_id } = element
-      const route = Array.isArray(element.route)
-        ? element.route.filter(
-            (rp: PcbTraceRoutePoint) => rp && rp.route_type === "wire",
-          )
-        : []
-      if (source_trace_id && pcb_trace_id) {
-        connections.push([pcb_trace_id, source_trace_id])
-      }
-      if (Array.isArray(route)) {
-        const startId = route.find(
-          (rp) => rp?.start_pcb_port_id,
-        )?.start_pcb_port_id
-        const endId = route.find((rp) => rp?.end_pcb_port_id)?.end_pcb_port_id
-        if (startId && pcb_trace_id) {
-          connections.push([startId, pcb_trace_id])
-        }
-        if (pcb_trace_id && endId) {
-          connections.push([pcb_trace_id, endId])
-        }
-      }
-    } else if (element.type === "pcb_via") {
-      const { pcb_via_id, pcb_trace_id, source_trace_id, source_net_id } =
-        element
-      const connectedIds = [
-        ...(element.pcb_port_ids ?? []),
-        pcb_trace_id,
-        source_trace_id,
-        source_net_id,
-      ].filter((connectedId): connectedId is string => Boolean(connectedId))
-      if (pcb_via_id && connectedIds.length > 0) {
-        connections.push([pcb_via_id, ...connectedIds])
-      }
-    } else if (element.type === "source_component") {
-      if (element.internally_connected_source_port_ids) {
-        for (const portGroup of element.internally_connected_source_port_ids) {
-          connections.push(portGroup)
-        }
+      case "pcb_port":
+        if (element.source_port_id)
+          connections.push([element.source_port_id, element.pcb_port_id])
+        break
+      case "pcb_smtpad":
+        if (element.pcb_port_id)
+          connections.push([element.pcb_smtpad_id, element.pcb_port_id])
+        break
+      case "pcb_plated_hole":
+        if (element.pcb_port_id)
+          connections.push([element.pcb_plated_hole_id, element.pcb_port_id])
+        break
+      case "pcb_trace":
+        if (element.source_trace_id)
+          connections.push([element.pcb_trace_id, element.source_trace_id])
+        break
+      case "pcb_via": {
+        const sourceOwnerId =
+          element.source_trace_id ??
+          element.source_net_id ??
+          element.pcb_trace_id
+        if (sourceOwnerId) connections.push([element.pcb_via_id, sourceOwnerId])
+        break
       }
     }
   }
 
-  const netMap = findConnectedNetworks(connections)
-
-  return new ConnectivityMap(netMap)
+  return new ConnectivityMap(findConnectedNetworks(connections))
 }

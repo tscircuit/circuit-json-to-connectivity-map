@@ -95,7 +95,11 @@ Generates a source port connectivity map from circuit JSON data.
 
 ### `getFullConnectivityMapFromCircuitJson(circuitJson: AnyCircuitElement[]): ConnectivityMap`
 
-Generates a full connectivity map from circuit JSON data, including PCB elements.
+Generates desired connectivity from source declarations, including PCB elements
+through their explicit ownership references. PCB trace endpoints, via port
+references, and physical copper contact do not establish desired connections.
+An unowned PCB trace remains unassigned even when its endpoints belong to the
+same source net. Use `PcbConnectivityMap` to inspect physical copper contact.
 
 ### `ConnectivityMap`
 
