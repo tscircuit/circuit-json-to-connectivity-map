@@ -1,10 +1,11 @@
 import type { AnyCircuitElement } from "circuit-json"
 import { ConnectivityMap } from "./ConnectivityMap"
 import { findConnectedNetworks } from "./findConnectedNetworks"
+import { getDeclaredComponentCopperSourceId } from "./getDeclaredComponentCopperSourceId"
 
 /**
  * Desired connectivity comes from source declarations. PCB objects are aliases
- * of their declared owners; route endpoints and physical contact add no edges.
+ * of their declared owners. PCB endpoints never join intended source nets.
  */
 export const getFullConnectivityMapFromCircuitJson = (
   circuitJson: AnyCircuitElement[],
@@ -32,7 +33,10 @@ export const getFullConnectivityMapFromCircuitJson = (
         )
         break
       case "source_component_internal_connection":
-        connections.push(element.source_port_ids)
+        connections.push([
+          element.source_component_internal_connection_id,
+          ...element.source_port_ids,
+        ])
         break
       case "source_manually_placed_via": {
         const sourcePortIds = circuitJson.flatMap((sourcePort) =>
@@ -44,6 +48,7 @@ export const getFullConnectivityMapFromCircuitJson = (
         )
         connections.push(
           [
+            element.source_manually_placed_via_id,
             ...sourcePortIds,
             element.source_net_id,
             element.source_trace_id,
@@ -63,15 +68,20 @@ export const getFullConnectivityMapFromCircuitJson = (
         if (element.pcb_port_id)
           connections.push([element.pcb_plated_hole_id, element.pcb_port_id])
         break
-      case "pcb_trace":
-        if (element.source_trace_id)
-          connections.push([element.pcb_trace_id, element.source_trace_id])
+      case "pcb_trace": {
+        const sourceOwnerId =
+          element.source_trace_id ??
+          getDeclaredComponentCopperSourceId(circuitJson, element)
+        if (sourceOwnerId)
+          connections.push([element.pcb_trace_id, sourceOwnerId])
         break
+      }
       case "pcb_via": {
         const sourceOwnerId =
           element.source_trace_id ??
           element.source_net_id ??
-          element.pcb_trace_id
+          element.pcb_trace_id ??
+          getDeclaredComponentCopperSourceId(circuitJson, element)
         if (sourceOwnerId) connections.push([element.pcb_via_id, sourceOwnerId])
         break
       }

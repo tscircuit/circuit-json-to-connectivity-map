@@ -47,7 +47,6 @@ test("a manually placed via's declared source net owns its layer ports", () => {
     {
       type: "pcb_via",
       pcb_via_id: "via",
-      source_net_id: "gnd",
       pcb_port_ids: ["pcb_top", "pcb_bottom"],
       x: 0,
       y: 0,
@@ -60,6 +59,7 @@ test("a manually placed via's declared source net owns its layer ports", () => {
   expect(
     connMap.areAllIdsConnected([
       "gnd",
+      "via_source",
       "via_top",
       "via_bottom",
       "pcb_top",
