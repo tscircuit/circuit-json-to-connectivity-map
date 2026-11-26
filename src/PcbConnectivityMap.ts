@@ -77,7 +77,6 @@ export class PcbConnectivityMap {
   }
 
   addTrace(trace: PCBTrace) {
-    this.traceIdToElm.set(trace.pcb_trace_id, trace)
     const connections: string[][] = []
     for (const rp of trace.route) {
       if (rp.route_type === "wire") {
@@ -90,6 +89,16 @@ export class PcbConnectivityMap {
       }
     }
 
+    for (const [existingTraceId, existingTrace] of this.traceIdToElm) {
+      if (
+        existingTraceId !== trace.pcb_trace_id &&
+        this._arePcbTracesConnected(existingTrace, trace)
+      ) {
+        connections.push([existingTraceId, trace.pcb_trace_id])
+      }
+    }
+
+    this.traceIdToElm.set(trace.pcb_trace_id, trace)
     this.connMap.addConnections(connections)
   }
 
