@@ -5,7 +5,7 @@ import { convertCircuitJsonToPcbSvg } from "circuit-to-svg"
 import { getFullConnectivityMapFromCircuitJson } from "../src"
 import fixture from "./fixtures/closed-jumper-copper-ownership/circuit.json"
 
-test("a closed jumper's pads share SIG but its bridge is left unassigned", async () => {
+test("a closed jumper's bridge shares its pads' declared SIG connection", async () => {
   const circuitJson = fixture as AnyCircuitElement[]
   const connMap = getFullConnectivityMapFromCircuitJson(circuitJson)
   expect(
@@ -16,7 +16,7 @@ test("a closed jumper's pads share SIG but its bridge is left unassigned", async
     ]),
   ).toBe(true)
   const bridgeHasOwner = connMap.areIdsConnected("pcb_trace_0", "source_net_0")
-  expect(bridgeHasOwner).toBe(false)
+  expect(bridgeHasOwner).toBe(true)
 
   const bridgeNote: PcbNoteText = {
     type: "pcb_note_text",
